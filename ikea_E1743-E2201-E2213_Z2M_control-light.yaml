@@ -144,9 +144,8 @@ variables:
 condition:
   - condition: template
     value_template: >-
-      {{ 
-        logger.info(remote_devices_names)
-        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt) 
+      {{
+        (trigger.topic.split('/')[1] in remote_devices_names if is_mqtt) 
       }}
 actions:
   - choose:
