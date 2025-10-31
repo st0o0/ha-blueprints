@@ -239,7 +239,7 @@ actions:
                   - condition: trigger
                     id:
                       - press-on-z2m-e1743-e2201
-                    sequence:
+                sequence:
                   - wait_for_trigger:
                       - trigger: mqtt
                         topic: "{{ mqtt_topic }}"
@@ -250,10 +250,8 @@ actions:
                   - if:
                       - condition: template
                         value_template: "{{ wait.trigger.idx is defined }}"
-                    then: 
-                      - sequence: !input on_double_press_action
-                    else: 
-                      - sequence: !input on_press_action
+                    then: !input on_double_press_action
+                    else: !input on_press_action
             else: !input on_press_action
       - conditions:
           - condition: trigger
@@ -269,7 +267,7 @@ actions:
                   - condition: trigger
                     id:
                       - press-off-z2m-e1743-e2201
-                    sequence:
+                sequence:
                   - wait_for_trigger:
                       - trigger: mqtt
                         topic: "{{ mqtt_topic }}"
@@ -280,10 +278,8 @@ actions:
                   - if:
                       - condition: template
                         value_template: "{{ wait.trigger.idx is defined }}"
-                    then: 
-                      - sequence: !input off_double_press_action
-                    else: 
-                      - sequence: !input off_press_action
+                    then: !input off_double_press_action
+                    else: !input off_press_action
             else: !input off_press_action
       - conditions:
           - condition: trigger
@@ -314,7 +310,7 @@ actions:
                               id:
                                 - hold-on-z2m-e1743-e2201
                                 - hold-dots1-z2m-e2213
-                              sequence:
+                          sequence:
                             - wait_for_trigger:
                                 - trigger: mqtt
                                   topic: "{{ mqtt_topic }}"
@@ -347,7 +343,7 @@ actions:
                               id:
                                 - hold-off-z2m-e1743-e2201
                                 - hold-dots2-z2m-e2213
-                              sequence:
+                          sequence:
                             - wait_for_trigger:
                                 - trigger: mqtt
                                   topic: "{{ mqtt_topic }}"
