@@ -235,25 +235,25 @@ actions:
               - condition: template
                 value_template: "{{ on_double_press_exposed }}"
             then:
-              - conditions:
-                  - condition: trigger
-                    id:
-                      - press-on-z2m-e1743-e2201
-                sequence:
-                  - wait_for_trigger:
-                      - trigger: mqtt
-                        topic: "{{ mqtt_topic }}"
-                        payload: "on"
-                    timeout:
-                      milliseconds: !input helper_double_press_delay
-                    continue_on_timeout: true
-                  - if:
-                      - condition: template
-                        value_template: "{{ wait.trigger.idx is defined }}"
-                    then:
-                      - sequence: !input on_double_press_action
-                    else:
-                      - sequence: !input on_press_action
+              - choose:
+                  - conditions:
+                      - condition: trigger
+                        id:
+                          - press-on-z2m-e1743-e2201
+                    sequence:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ mqtt_topic }}"
+                            payload: "on"
+                        timeout:
+                          milliseconds: !input helper_double_press_delay
+                        continue_on_timeout: true
+                      - if:
+                          - condition: template
+                            value_template: "{{ wait.trigger.idx is defined }}"
+                        then: !input on_double_press_action
+                        else: !input on_press_action
+
             else: !input on_press_action
       - conditions:
           - condition: trigger
@@ -265,25 +265,25 @@ actions:
               - condition: template
                 value_template: "{{ off_double_press_exposed }}"
             then:
-              - conditions:
-                  - condition: trigger
-                    id:
-                      - press-off-z2m-e1743-e2201
-                sequence:
-                  - wait_for_trigger:
-                      - trigger: mqtt
-                        topic: "{{ mqtt_topic }}"
-                        payload: "off"
-                    timeout:
-                      milliseconds: !input helper_double_press_delay
-                    continue_on_timeout: true
-                  - if:
-                      - condition: template
-                        value_template: "{{ wait.trigger.idx is defined }}"
-                    then:
-                      - sequence: !input off_double_press_action
-                    else:
-                      - sequence: !input off_press_action
+              - choose:
+                  - conditions:
+                      - condition: trigger
+                        id:
+                          - press-off-z2m-e1743-e2201
+                    sequence:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ mqtt_topic }}"
+                            payload: "off"
+                        timeout:
+                          milliseconds: !input helper_double_press_delay
+                        continue_on_timeout: true
+                      - if:
+                          - condition: template
+                            value_template: "{{ wait.trigger.idx is defined }}"
+                        then: !input off_double_press_action
+                        else: !input off_press_action
+                default: !input off_press_action
             else: !input off_press_action
       - conditions:
           - condition: trigger
@@ -309,27 +309,28 @@ actions:
                 - parallel:
                     - sequence: !input on_hold_action
                     - sequence:
-                        - conditions:
-                            - condition: trigger
-                              id:
-                                - hold-on-z2m-e1743-e2201
-                                - hold-dots1-z2m-e2213
-                          sequence:
-                            - wait_for_trigger:
-                                - trigger: mqtt
-                                  topic: "{{ mqtt_topic }}"
-                                  payload: "brightness_stop"
-                                - trigger: mqtt
-                                  topic: "{{ mqtt_topic }}"
-                                  payload: "1_long_release"
-                              timeout:
-                                milliseconds: !input helper_hold_delay
-                              continue_on_timeout: true
-                            - if:
-                                - condition: template
-                                  value_template: "{{ wait.trigger.idx is defined }}"
-                              then:
-                                - stop: button released
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-on-z2m-e1743-e2201
+                                    - hold-dots1-z2m-e2213
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "1_long_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
       - conditions:
           - condition: trigger
             id:
@@ -342,24 +343,25 @@ actions:
                 - parallel:
                     - sequence: !input off_hold_action
                     - sequence:
-                        - conditions:
-                            - condition: trigger
-                              id:
-                                - hold-off-z2m-e1743-e2201
-                                - hold-dots2-z2m-e2213
-                          sequence:
-                            - wait_for_trigger:
-                                - trigger: mqtt
-                                  topic: "{{ mqtt_topic }}"
-                                  payload: "brightness_stop"
-                                - trigger: mqtt
-                                  topic: "{{ mqtt_topic }}"
-                                  payload: "2_long_release"
-                              timeout:
-                                milliseconds: !input helper_hold_delay
-                              continue_on_timeout: true
-                            - if:
-                                - condition: template
-                                  value_template: "{{ wait.trigger.idx is defined }}"
-                              then:
-                                - stop: button released
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-off-z2m-e1743-e2201
+                                    - hold-dots2-z2m-e2213
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "2_long_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
