@@ -221,7 +221,7 @@ condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[1] in remote_devices_names if is_mqtt) 
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt) 
       }}
 actions:
   - choose:
