@@ -251,9 +251,9 @@ actions:
                       - condition: template
                         value_template: "{{ wait.trigger.idx is defined }}"
                     then:
-                        - sequence: !input on_double_press_action
+                      - sequence: !input on_double_press_action
                     else:
-                        - sequence: !input on_press_action
+                      - sequence: !input on_press_action
             else: !input on_press_action
       - conditions:
           - condition: trigger
@@ -281,9 +281,9 @@ actions:
                       - condition: template
                         value_template: "{{ wait.trigger.idx is defined }}"
                     then:
-                        - sequence: !input off_double_press_action
+                      - sequence: !input off_double_press_action
                     else:
-                        - sequence: !input off_press_action
+                      - sequence: !input off_press_action
             else: !input off_press_action
       - conditions:
           - condition: trigger
