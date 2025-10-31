@@ -140,12 +140,12 @@ variables:
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
   remote_devices: !input remote_devices
-  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | list }}"
+  remote_devices_names: "{{ expand(remote_devices) | map(attribute='name') | list }}"
 condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[1] in remote_devices_names if is_mqtt) 
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt) 
       }}
 actions:
   - choose:
