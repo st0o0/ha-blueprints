@@ -3,52 +3,66 @@ blueprint:
     min_version: 2024.10.0
   author: damru / st0o0
   domain: automation
-  name: Ikea's Rodret, Somrig or Tradfri 💡 Light control
+  name: Ikea's Styrbar or Tradfri 💡 Light control
   description: >
-    ## 💡 Control a light with **IKEA RODRET** or **IKEA SOMRIG** or **IKEA TRADFRI ON/OFF** remotes
+    ## 💡 Control lights with **IKEA TRÅDFRI Remote (E1810)** and **IKEA STYRBAR Remote (E2001/E2002)**
 
-    Only for use with Zigbee2MQTT (cf [MQTT](https://www.home-assistant.io/integrations/mqtt)).
+    This blueprint allows you to link one or more IKEA remotes to your lights, scenes, or other entities.
 
-    Available controls:
+    🧩 **Integration:** Zigbee2MQTT (see [MQTT integration](https://www.home-assistant.io/integrations/mqtt))
+    ⚙️ Works with devices paired via MQTT using Zigbee2MQTT (not ZHA).
 
-    - Press **on** (Rodret, Tradfri) or **1 dot** (Somrig) to turn on the light
-    (Optional: set the target brightness by enabling **Force Brightness** and setting a **Brightness** value)
+    ### 🕹️ Available controls
 
-    - Press **off** (Rodret, Tradfri) or **2 dots** (Somrig) to turn off the light
+    #### **IKEA TRÅDFRI Remote (E1810)**
 
-    - Hold **on** (Rodret, Tradfri) or **1 dot** (Somrig) button to increase the brightness
+    The TRÅDFRI Remote has **5 buttons**:
+    - **ON (⭡)** — Turns the light **on** or triggers an "on" action.
+      *(Optional: enable “Force Brightness” to set a specific brightness when turning on.)*
+    - **OFF (⭣)** — Turns the light **off**.
+    - **LEFT (◀)** — Decrease brightness or switch to a previous scene (configurable).
+    - **RIGHT (▶)** — Increase brightness or switch to the next scene (configurable).
+    - **CENTER (●)** — Can be used as a toggle or to activate a preferred scene.
 
-    - Hold **off** (Rodret, Tradfri) or **2 dots** (Somrig) button to decrease the brightness down to 1%
+    Long presses are also supported for smooth brightness adjustments (e.g., holding LEFT/RIGHT).
+
+    #### **IKEA STYRBAR Remote (E2001/E2002)**
+
+    The STYRBAR Remote has **4 buttons**, arranged in a D-pad style:
+    - **Top button (ON)** — Turns the light **on**.
+      *(Optional: can trigger specific brightness or scene.)*
+    - **Bottom button (OFF)** — Turns the light **off**.
+    - **Left button (◀)** — Decrease brightness or previous scene (configurable).
+    - **Right button (▶)** — Increase brightness or next scene (configurable).
+
+    Holding the **ON** or **OFF** buttons will gradually increase or decrease brightness.
+
+    ### 💬 Notes
+    - Designed for use with Zigbee2MQTT devices (`integration: mqtt`).
+    - Multiple remotes can control the same target light or scene.
+    - Button mapping and hold actions depend on the Zigbee2MQTT configuration and firmware version.
+
+    ---
+    Example use cases:
+    - Adjust brightness and toggle your main light
+    - Cycle through lighting scenes in a room
+    - Use center or side buttons to trigger automations
   input:
     remote_devices:
       name: Remotes
       description: >
-        IKEA remote (Rodret, Somrig, Tradfri) to use.
+        IKEA remote (Styrbar, Tradfri) to use.
       default: []
       selector:
         device:
           filter:
             - integration: mqtt
               manufacturer: IKEA
-              model: RODRET wireless dimmer/power switch
-            - integration: mqtt
-              manufacturer: IKEA
-              model: SOMRIG shortcut button
-            - integration: mqtt
-              manufacturer: IKEA
-              model: TRADFRI on/off switch
+              model: STYRBAR remote control
             # DEPRECATED - for removal, keeping for z2m v1 backward compatibility
             - integration: mqtt
               manufacturer: IKEA
-              model: RODRET wireless dimmer/power switch (E2201)
-            # DEPRECATED - for removal, keeping for z2m v1 backward compatibility
-            - integration: mqtt
-              manufacturer: IKEA
-              model: SOMRIG shortcut button (E2213)
-            # DEPRECATED - for removal, keeping for z2m v1 backward compatibility
-            - integration: mqtt
-              manufacturer: IKEA
-              model: TRADFRI on/off switch (E1743)
+              model: STYRBAR remote control (E2001/E2002)
           multiple: true
     light:
       name: Light
@@ -85,53 +99,51 @@ blueprint:
 mode: restart
 max_exceeded: silent
 triggers:
-  # RODRET (E2201) - TRADFRI (E1743)
+  # Styrbar (E2001/E2002)
   - trigger: mqtt
     topic: "+/+/+/action"
     payload: "on"
-    id: press-on-z2m-e1743-e2201
+    id: press-on-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
     payload: "off"
-    id: press-off-z2m-e1743-e2201
+    id: press-off-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
     payload: brightness_move_up
-    id: hold-on-z2m-e1743-e2201
+    id: hold-up-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
     payload: brightness_move_down
-    id: hold-off-z2m-e1743-e2201
+    id: hold-down-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
     payload: brightness_stop
-    id: release-z2m-e1743-e2201
-
-  # SOMRIG - E2213
+    id: release-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
-    payload: 1_short_release
-    id: press-dots1-z2m-e2213
+    payload: arrow_left_click
+    id: press-arrow-left-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
-    payload: 2_short_release
-    id: press-dots2-z2m-e2213
+    payload: arrow_left_hold
+    id: hold-arrow-left-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
-    payload: 1_long_press
-    id: hold-dots1-z2m-e2213
+    payload: arrow_left_release
+    id: release-hold-arrow-left-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
-    payload: 2_long_press
-    id: hold-dots2-z2m-e2213
+    payload: arrow_right_click
+    id: press-arrow-right-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
-    payload: 1_long_release
-    id: release-hold-dots1-z2m-e2213
+    payload: arrow_right_hold
+    id: hold-arrow-right-z2m-e2001-e2002
   - trigger: mqtt
     topic: "+/+/+/action"
-    payload: 2_long_release
-    id: release-hold-dots2-z2m-e2213
+    payload: arrow_right_release
+    id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
   helper_force_brightness: !input helper_force_brightness
   helper_hold_delay: 0.1
@@ -145,7 +157,7 @@ condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt) 
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
       }}
 actions:
   - choose:
