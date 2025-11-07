@@ -3,9 +3,9 @@ blueprint:
     min_version: 2024.10.0
   author: damru / st0o0
   domain: automation
-  name: Ikea's Styrbar or Tradfri 💡 Light control
+  name: Ikea's Styrbar 💡 Light control
   description: >
-    ## 💡 Control lights with **IKEA TRÅDFRI Remote (E1810)** and **IKEA STYRBAR Remote (E2001/E2002)**
+    ## 💡 Control lights with **IKEA STYRBAR Remote (E2001/E2002)**
 
     This blueprint allows you to link one or more IKEA remotes to your lights, scenes, or other entities.
 
@@ -13,18 +13,6 @@ blueprint:
     ⚙️ Works with devices paired via MQTT using Zigbee2MQTT (not ZHA).
 
     ### 🕹️ Available controls
-
-    #### **IKEA TRÅDFRI Remote (E1810)**
-
-    The TRÅDFRI Remote has **5 buttons**:
-    - **ON (⭡)** — Turns the light **on** or triggers an "on" action.
-      *(Optional: enable “Force Brightness” to set a specific brightness when turning on.)*
-    - **OFF (⭣)** — Turns the light **off**.
-    - **LEFT (◀)** — Decrease brightness or switch to a previous scene (configurable).
-    - **RIGHT (▶)** — Increase brightness or switch to the next scene (configurable).
-    - **CENTER (●)** — Can be used as a toggle or to activate a preferred scene.
-
-    Long presses are also supported for smooth brightness adjustments (e.g., holding LEFT/RIGHT).
 
     #### **IKEA STYRBAR Remote (E2001/E2002)**
 
@@ -185,6 +173,24 @@ actions:
             id:
               - press-off-z2m-e1743-e2201
               - press-dots2-z2m-e2213
+        sequence:
+          - action: light.turn_off
+            target:
+              entity_id: !input light
+            data: {}
+      - conditions:
+          - condition: trigger
+            id:
+              -
+        sequence:
+          - action: light.turn_off
+            target:
+              entity_id: !input light
+            data: {}
+      - conditions:
+          - condition: trigger
+            id:
+              -
         sequence:
           - action: light.turn_off
             target:
