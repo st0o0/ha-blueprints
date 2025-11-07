@@ -140,7 +140,7 @@ variables:
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
   remote_devices: !input remote_devices
-  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('replace', '^.*/', '') | list }}"
+  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
 condition:
   - condition: template
     value_template: >-

@@ -4,37 +4,68 @@ blueprint:
   author: st0o0
   domain: automation
   name: Ikea's Styrbar ⚙️ Controls
-  description: >
-    ## 💡 Control lights with **IKEA STYRBAR Remote (E2001/E2002)**
+  description: |
+    ## ⚙️ IKEA STYRBAR Remote – Light & Scene Control for Home Assistant
 
-    This blueprint allows you to link one or more IKEA remotes to your lights, scenes, or other entities.
+    This blueprint lets you control your **lights, scenes, or automations** using one or more  
+    **IKEA STYRBAR remotes (E2001 / E2002)** paired via **Zigbee2MQTT**.
 
-    🧩 **Integration:** Zigbee2MQTT (see [MQTT integration](https://www.home-assistant.io/integrations/mqtt))
-    ⚙️ Works with devices paired via MQTT using Zigbee2MQTT (not ZHA).
-
-    ### 🕹️ Available controls
-
-    #### **IKEA STYRBAR Remote (E2001/E2002)**
-
-    The STYRBAR Remote has **4 buttons**, arranged in a D-pad style:
-    - **Top button (ON)** — Turns the light **on**.
-      *(Optional: can trigger specific brightness or scene.)*
-    - **Bottom button (OFF)** — Turns the light **off**.
-    - **Left button (◀)** — Decrease brightness or previous scene (configurable).
-    - **Right button (▶)** — Increase brightness or next scene (configurable).
-
-    Holding the **ON** or **OFF** buttons will gradually increase or decrease brightness.
-
-    ### 💬 Notes
-    - Designed for use with Zigbee2MQTT devices (`integration: mqtt`).
-    - Multiple remotes can control the same target light or scene.
-    - Button mapping and hold actions depend on the Zigbee2MQTT configuration and firmware version.
+    It provides full flexibility for press, hold, and double-press actions — ideal for creating a seamless, intuitive lighting experience.
 
     ---
-    Example use cases:
-    - Adjust brightness and toggle your main light
-    - Cycle through lighting scenes in a room
-    - Use center or side buttons to trigger automations
+
+    ### 🧩 Integration
+    - Works with **Zigbee2MQTT** (`integration: mqtt`)  
+    - ⚠️ **Not compatible** with ZHA  
+    - Supports both **E2001** and **E2002** models  
+    - Backward compatible with older Zigbee2MQTT entity naming
+
+    For setup help, see [MQTT integration documentation](https://www.home-assistant.io/integrations/mqtt).
+
+    ---
+
+    ### 🎛️ Button Layout & Default Functions
+
+    | Button | Action | Typical Usage |
+    |:--------|:--------|:--------------|
+    | 🔼 **Top (ON)** | Single press | Turn light **on**, or trigger a scene |
+    | 🔽 **Bottom (OFF)** | Single press | Turn light **off** |
+    | ◀ **Left** | Single press | Decrease brightness / Previous scene |
+    | ▶ **Right** | Single press | Increase brightness / Next scene |
+    
+    Holding **ON/OFF** smoothly adjusts brightness up or down. 
+    Holding **Left/Right** can change color temperature, scene, or any custom action.
+
+    ---
+
+    ### ⚙️ Advanced Options
+
+    - **Double Press Support** – Optional for all buttons (requires exposing double-press events)  
+    - **Hold Delay** – Controls how fast actions repeat while holding a button  
+    - **Max Loops** – Limits how many times a hold action repeats  
+    - **Custom Actions** – Assign *any* Home Assistant action to any button event  
+    - **Multiple Remotes** – Control the same light or scene from several STYRBARs
+
+    ---
+
+    ### 💡 Example Use Cases
+    - Adjust light brightness and toggle power with a single remote  
+    - Cycle through favorite lighting scenes  
+    - Control multiple lights in a room with one remote  
+    - Trigger automations, modes, or scripts directly from STYRBAR buttons
+
+    ---
+
+    ### 🧠 Tips
+    - Enable “Expose double press” if your device firmware supports it  
+    - Adjust “Hold delay” for faster or smoother dimming  
+    - Use **arrow buttons** to control color temperature or effects for dynamic scenes  
+    - Combine multiple STYRBARs for advanced multi-room lighting setups
+
+    ---
+
+    ✨ Created by **st0o0**  
+    Refined for clarity, readability, and compatibility with the latest **Home Assistant 2024.10+**
   input:
     remote_devices:
       name: Remotes
@@ -252,7 +283,7 @@ variables:
   on_double_press_exposed: !input on_double_press_exposed
   off_double_press_exposed: !input off_double_press_exposed
   remote_devices: !input remote_devices
-  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('replace', '^.*/', '')  | list }}"
+  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
 condition:
   - condition: template
     value_template: >-
