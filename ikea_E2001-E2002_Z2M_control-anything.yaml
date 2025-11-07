@@ -118,6 +118,24 @@ blueprint:
       default: []
       selector:
         action: {}
+    arrow_left_click_double_press_action:
+      name: Double press "arrow_left_click" action
+      description: >
+        Choose action(s) to run when the **arrow_left_click** (Styrbar) button is **pressed twice**.
+
+        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+      default: []
+      selector:
+        action: {}
+    arrow_right_click_double_press_action:
+      name: Double press "arrow_right_click" action
+      description: >
+        Choose action(s) to run when the **arrow_right_click** (Styrbar) button is **pressed twice**.
+
+        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+      default: []
+      selector:
+        action: {}
     helper_section:
       name: Helpers
       icon: mdi:cog-outline
@@ -326,7 +344,7 @@ actions:
                       - if:
                           - condition: template
                             value_template: "{{ wait.trigger.idx is defined }}"
-                        then: !input on_double_press_action
+                        then: !input arrow_left_click_double_press_action
                         else: !input arrow_left_press_action
                 default: !input arrow_left_press_action
             else: !input arrow_left_press_action
@@ -355,7 +373,7 @@ actions:
                       - if:
                           - condition: template
                             value_template: "{{ wait.trigger.idx is defined }}"
-                        then: !input on_double_press_action
+                        then: !input arrow_right_click_double_press_action
                         else: !input arrow_right_press_action
                 default: !input arrow_right_press_action
             else: !input arrow_right_press_action

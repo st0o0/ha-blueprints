@@ -190,6 +190,8 @@ actions:
             target:
               entity_id: !input light
             data: {}
+      #
+      # Actions for up button long press
       - conditions:
           - condition: trigger
             id:
