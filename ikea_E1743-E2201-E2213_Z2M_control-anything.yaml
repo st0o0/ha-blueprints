@@ -216,7 +216,7 @@ variables:
   on_double_press_exposed: !input on_double_press_exposed
   off_double_press_exposed: !input off_double_press_exposed
   remote_devices: !input remote_devices
-  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('replace', 'RODRETS/', '')  | list }}"
+  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
 condition:
   - condition: template
     value_template: >-

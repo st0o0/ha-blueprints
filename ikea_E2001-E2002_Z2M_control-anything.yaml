@@ -1,0 +1,528 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: Ikea's Styrbar ⚙️ Controls
+  description: |
+    ## ⚙️ IKEA STYRBAR Remote – Light & Scene Control for Home Assistant
+
+    This blueprint lets you control your **lights, scenes, or automations** using one or more  
+    **IKEA STYRBAR remotes (E2001 / E2002)** paired via **Zigbee2MQTT**.
+
+    It provides full flexibility for press, hold, and double-press actions — ideal for creating a seamless, intuitive lighting experience.
+
+    ---
+
+    ### 🧩 Integration
+    - Works with **Zigbee2MQTT** (`integration: mqtt`)  
+    - ⚠️ **Not compatible** with ZHA  
+    - Supports both **E2001** and **E2002** models  
+    - Backward compatible with older Zigbee2MQTT entity naming
+
+    For setup help, see [MQTT integration documentation](https://www.home-assistant.io/integrations/mqtt).
+
+    ---
+
+    ### 🎛️ Button Layout & Default Functions
+
+    | Button | Action | Typical Usage |
+    |:--------|:--------|:--------------|
+    | 🔼 **Top (ON)** | Single press | Turn light **on**, or trigger a scene |
+    | 🔽 **Bottom (OFF)** | Single press | Turn light **off** |
+    | ◀ **Left** | Single press | Decrease brightness / Previous scene |
+    | ▶ **Right** | Single press | Increase brightness / Next scene |
+    
+    Holding **ON/OFF** smoothly adjusts brightness up or down. 
+    Holding **Left/Right** can change color temperature, scene, or any custom action.
+
+    ---
+
+    ### ⚙️ Advanced Options
+
+    - **Double Press Support** – Optional for all buttons (requires exposing double-press events)  
+    - **Hold Delay** – Controls how fast actions repeat while holding a button  
+    - **Max Loops** – Limits how many times a hold action repeats  
+    - **Custom Actions** – Assign *any* Home Assistant action to any button event  
+    - **Multiple Remotes** – Control the same light or scene from several STYRBARs
+
+    ---
+
+    ### 💡 Example Use Cases
+    - Adjust light brightness and toggle power with a single remote  
+    - Cycle through favorite lighting scenes  
+    - Control multiple lights in a room with one remote  
+    - Trigger automations, modes, or scripts directly from STYRBAR buttons
+
+    ---
+
+    ### 🧠 Tips
+    - Enable “Expose double press” if your device firmware supports it  
+    - Adjust “Hold delay” for faster or smoother dimming  
+    - Use **arrow buttons** to control color temperature or effects for dynamic scenes  
+    - Combine multiple STYRBARs for advanced multi-room lighting setups
+
+    ---
+
+    ✨ Created by **st0o0**  
+    Refined for clarity, readability, and compatibility with the latest **Home Assistant 2024.10+**
+  input:
+    remote_devices:
+      name: Remotes
+      description: >
+        IKEA remote (Styrbar) to use.
+      default: []
+      selector:
+        device:
+          filter:
+            - integration: mqtt
+              manufacturer: IKEA
+              model: STYRBAR remote control
+            # DEPRECATED - for removal, keeping for z2m v1 backward compatibility
+            - integration: mqtt
+              manufacturer: IKEA
+              model: STYRBAR remote control (E2001/E2002)
+          multiple: true
+    on_press_action:
+      name: Press "on" action
+      description: Choose action(s) to run when **on** (Styrbar) button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    off_press_action:
+      name: Press "off" action
+      description: Choose action(s) to run when **off** (Styrbar) button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    on_hold_action:
+      name: Hold "on" action
+      description: Choose action(s) to run when **on** (Styrbar) button is **held**.
+      default: []
+      selector:
+        action: {}
+    off_hold_action:
+      name: Hold "off" action
+      description: Choose action(s) to run when **on** (Styrbar) button is **held**.
+      default: []
+      selector:
+        action: {}
+    arrow_left_press_action:
+      name: Press "arrow_left_click" action
+      description: Choose action(s) to run when **arrow_left_click** (Styrbar) button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    arrow_right_press_action:
+      name: Press "arrow_right_click" action
+      description: Choose action(s) to run when **arrow_right_click** (Styrbar) button is **pressed**.
+      default: []
+      selector:
+        action: {}
+    arrow_left_hold_action:
+      name: Hold "arrow_left_hold" action
+      description: Choose action(s) to run when **arrow_left_hold** (Styrbar) button is **held**.
+      default: []
+      selector:
+        action: {}
+    arrow_right_hold_action:
+      name: Hold "arrow_right_hold" action
+      description: Choose action(s) to run when **arrow_right_hold** (Styrbar) button is **held**.
+      default: []
+      selector:
+        action: {}
+    on_double_press_action:
+      name: Double press "on" action
+      description: >
+        Choose action(s) to run when the **on** (Styrbar) button is **pressed twice**.
+
+        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+      default: []
+      selector:
+        action: {}
+    off_double_press_action:
+      name: Double press "off" action
+      description: >
+        Choose action(s) to run when the **off** (Styrbar) button is **pressed twice**.
+
+        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+      default: []
+      selector:
+        action: {}
+    arrow_left_click_double_press_action:
+      name: Double press "arrow_left_click" action
+      description: >
+        Choose action(s) to run when the **arrow_left_click** (Styrbar) button is **pressed twice**.
+
+        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+      default: []
+      selector:
+        action: {}
+    arrow_right_click_double_press_action:
+      name: Double press "arrow_right_click" action
+      description: >
+        Choose action(s) to run when the **arrow_right_click** (Styrbar) button is **pressed twice**.
+
+        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+      default: []
+      selector:
+        action: {}
+    helper_section:
+      name: Helpers
+      icon: mdi:cog-outline
+      collapsed: true
+      input:
+        helper_hold_delay:
+          name: Hold delay
+          description: Delay between the execution of the **Hold** action(s).
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_max_loops:
+          name: Max number of loops
+          description: Maximum number of loops when holding down a button.
+          default: 20
+          selector:
+            number:
+              min: 1.0
+              max: 1000.0
+              step: 1.0
+              mode: slider
+    styrbar_options_section:
+      name: Styrbar options
+      icon: mdi:remote
+      collapsed: true
+      input:
+        on_double_press_exposed:
+          name: Expose virtual double press "on" event
+          description: >
+            Choose whether or not to expose the virtual **double press** event for the **on** button. 
+            Turn this on if you are providing action(s) for the **Double press action (on / 1 dot)**.
+          default: false
+          selector:
+            boolean: {}
+        off_double_press_exposed:
+          name: Expose virtual double press "off" event
+          description: >
+            Choose whether or not to expose the virtual **double press** event for the **off** button. 
+            Turn this on if you are providing an action for the **Double press action (off / 2 dots)**.
+          default: false
+          selector:
+            boolean: {}
+        helper_double_press_delay:
+          name: Double press delay
+          description: >
+            Max delay between the first and the second button press for the
+            **Double press events**. Provide a value only if you are using a double press action.
+            Increase this value if you notice that the double press action is not triggered
+            properly.
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+mode: restart
+max_exceeded: silent
+triggers:
+  # Styrbar (E2001/E2002)
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: "on"
+    id: press-on-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: "off"
+    id: press-off-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: brightness_move_up
+    id: hold-up-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: brightness_move_down
+    id: hold-down-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: brightness_stop
+    id: release-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_left_click
+    id: press-arrow-left-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_left_hold
+    id: hold-arrow-left-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_left_release
+    id: release-hold-arrow-left-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_right_click
+    id: press-arrow-right-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_right_hold
+    id: hold-arrow-right-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_right_release
+    id: release-hold-arrow-right-z2m-e2001-e2002
+variables:
+  is_mqtt: "{{ trigger.platform == 'mqtt' }}"
+  mqtt_topic: "{{ trigger.topic }}"
+  on_double_press_exposed: !input on_double_press_exposed
+  off_double_press_exposed: !input off_double_press_exposed
+  remote_devices: !input remote_devices
+  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
+condition:
+  - condition: template
+    value_template: >-
+      {{
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
+      }}
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - press-on-z2m-e2001-e2002
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ on_double_press_exposed }}"
+            then:
+              - choose:
+                  - conditions:
+                      - condition: trigger
+                        id:
+                          - press-on-z2m-e1743-e2201
+                    sequence:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ mqtt_topic }}"
+                            payload: "on"
+                        timeout:
+                          milliseconds: !input helper_double_press_delay
+                        continue_on_timeout: true
+                      - if:
+                          - condition: template
+                            value_template: "{{ wait.trigger.idx is defined }}"
+                        then: !input on_double_press_action
+                        else: !input on_press_action
+                default: !input on_press_action
+            else: !input on_press_action
+      - conditions:
+          - condition: trigger
+            id:
+              - press-off-z2m-e2001-e2002
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ off_double_press_exposed }}"
+            then:
+              - choose:
+                  - conditions:
+                      - condition: trigger
+                        id:
+                          - press-off-z2m-e1743-e2201
+                    sequence:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ mqtt_topic }}"
+                            payload: "off"
+                        timeout:
+                          milliseconds: !input helper_double_press_delay
+                        continue_on_timeout: true
+                      - if:
+                          - condition: template
+                            value_template: "{{ wait.trigger.idx is defined }}"
+                        then: !input off_double_press_action
+                        else: !input off_press_action
+                default: !input off_press_action
+            else: !input off_press_action
+      - conditions:
+          - condition: trigger
+            id:
+              - press-arrow-left-z2m-e2001-e2002
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ on_double_press_exposed }}"
+            then:
+              - choose:
+                  - conditions:
+                      - condition: trigger
+                        id:
+                          - press-arrow-left-z2m-e2001-e2002
+                    sequence:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ mqtt_topic }}"
+                            payload: "arrow_left_click"
+                        timeout:
+                          milliseconds: !input helper_double_press_delay
+                        continue_on_timeout: true
+                      - if:
+                          - condition: template
+                            value_template: "{{ wait.trigger.idx is defined }}"
+                        then: !input arrow_left_click_double_press_action
+                        else: !input arrow_left_press_action
+                default: !input arrow_left_press_action
+            else: !input arrow_left_press_action
+      - conditions:
+          - condition: trigger
+            id:
+              - press-arrow-right-z2m-e2001-e2002
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ on_double_press_exposed }}"
+            then:
+              - choose:
+                  - conditions:
+                      - condition: trigger
+                        id:
+                          - press-arrow-right-z2m-e2001-e2002
+                    sequence:
+                      - wait_for_trigger:
+                          - trigger: mqtt
+                            topic: "{{ mqtt_topic }}"
+                            payload: "arrow_right_click"
+                        timeout:
+                          milliseconds: !input helper_double_press_delay
+                        continue_on_timeout: true
+                      - if:
+                          - condition: template
+                            value_template: "{{ wait.trigger.idx is defined }}"
+                        then: !input arrow_right_click_double_press_action
+                        else: !input arrow_right_press_action
+                default: !input arrow_right_press_action
+            else: !input arrow_right_press_action
+      #
+      # Actions for up button long press
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-up-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence: !input on_hold_action
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-up-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-down-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence: !input off_hold_action
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-down-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-arrow-left-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence: !input arrow_left_hold_action
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-arrow-left-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "arrow_left_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-arrow-right-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence: !input arrow_right_hold_action
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-arrow-right-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "arrow_right_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
