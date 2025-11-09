@@ -112,6 +112,11 @@ blueprint:
               max: 100.0
               step: 1.0
               mode: slider
+    temperature_section:
+      name: Temperature
+      icon: mdi:lightbulb-variant
+      collapsed: true
+      input:
         helper_force_temperature:
           name: Force temperature
           description: Force the temperature to **Temperature** value when light turns on.
@@ -131,6 +136,22 @@ blueprint:
               max: 6500
               step: 100
               mode: slider
+        helper_temperature_step:
+          name: Light Temperature steps
+          description: Light temperature step size for **holding**.
+          default: 300
+          selector:
+            number:
+              unit_of_measurement: "K"
+              min: 50
+              max: 700
+              step: 50
+              mode: slider
+    styrbar_options_section:
+      name: Styrbar options
+      icon: mdi:remote
+      collapsed: true
+      input:
         helper_hold_delay:
           name: Hold delay
           description: Delay between the execution of the **Hold** action(s).
@@ -204,7 +225,7 @@ variables:
   helper_force_brightness: !input helper_force_brightness
   helper_hold_delay: 0.1
   helper_hold_dim_step: 4
-  helper_hold_temp_step: 400
+  helper_hold_temp_step: !input helper_temperature_step
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"

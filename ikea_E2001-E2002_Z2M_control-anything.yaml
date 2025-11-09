@@ -368,7 +368,7 @@ actions:
                       - wait_for_trigger:
                           - trigger: mqtt
                             topic: "{{ mqtt_topic }}"
-                            payload: "on"
+                            payload: "arrow_left_click"
                         timeout:
                           milliseconds: !input helper_double_press_delay
                         continue_on_timeout: true
@@ -397,7 +397,7 @@ actions:
                       - wait_for_trigger:
                           - trigger: mqtt
                             topic: "{{ mqtt_topic }}"
-                            payload: "on"
+                            payload: "arrow_right_click"
                         timeout:
                           milliseconds: !input helper_double_press_delay
                         continue_on_timeout: true
