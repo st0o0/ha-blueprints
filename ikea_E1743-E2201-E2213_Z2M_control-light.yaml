@@ -134,7 +134,7 @@ triggers:
     id: release-hold-dots2-z2m-e2213
 variables:
   helper_force_brightness: !input helper_force_brightness
-  helper_hold_delay: 0.1
+  helper_hold_delay: 0.25
   helper_hold_dim_step: 4
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
   light: !input light

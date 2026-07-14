@@ -1,0 +1,16 @@
+extends: default
+
+ignore: |
+  .github/
+
+rules:
+  line-length:
+    max: 300
+  truthy:
+    disable
+  comments:
+    min-spaces-from-content: 1
+  indentation:
+    spaces: 2
+    indent-sequences: true
+  document-start: disable

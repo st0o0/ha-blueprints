@@ -15,7 +15,7 @@ blueprint:
     ### 🧠 Features
     - Turn lights **on/off**
     - Adjust **brightness** (tap or hold)
-    - Change **color temperature** (left = warmer 🔥, right = cooler ❄️)
+    - Change **color temperature** (left = warmer 🔥, right = cooler ❄️) or **RGB hue**
     - Optional **force settings** for brightness and temperature when switching on
     - Supports **multiple remotes** controlling the same light or scene
 
@@ -25,8 +25,8 @@ blueprint:
     |:-------|:-------------|:-------------|
     | 🔼 **Top (ON)** | Turn light on / apply forced brightness or temperature | Gradually increase brightness |
     | 🔽 **Bottom (OFF)** | Turn light off | Gradually decrease brightness |
-    | ◀ **Left** | Make light warmer (lower Kelvin) | Continuously decrease color temperature |
-    | ▶ **Right** | Make light cooler (higher Kelvin) | Continuously increase color temperature |
+    | ◀ **Left** | Warmer / previous hue | Continuously decrease temperature / cycle hue left |
+    | ▶ **Right** | Cooler / next hue | Continuously increase temperature / cycle hue right |
 
     ---
 
@@ -39,10 +39,11 @@ blueprint:
     ---
 
     ### 🔧 Advanced Options
-    - **Force Brightness** → Apply a fixed brightness level when the light turns on  
-    - **Force Temperature** → Apply a fixed color temperature when the light turns on  
-    - **Hold Delay** → Time between repeated actions while a button is held  
-    - **Max Loops** → Maximum number of repetitions while holding a button  
+    - **Color Mode** → Choose between color temperature (Kelvin) or RGB (Hue) for arrow buttons
+    - **Force Brightness** → Apply a fixed brightness level when the light turns on
+    - **Force Temperature** → Apply a fixed color temperature when the light turns on
+    - **Hold Delay** → Time between repeated actions while a button is held
+    - **Max Loops** → Maximum number of repetitions while holding a button
 
     ---
 
@@ -112,6 +113,26 @@ blueprint:
               max: 100.0
               step: 1.0
               mode: slider
+    color_mode_section:
+      name: Color mode
+      icon: mdi:palette
+      collapsed: true
+      input:
+        helper_color_mode:
+          name: Arrow button color mode
+          description: >
+            Choose what the **left/right arrow buttons** control.
+            **Temperature** adjusts warm/cool white (Kelvin).
+            **RGB** cycles through hue colors.
+          default: temperature
+          selector:
+            select:
+              options:
+                - label: "Color Temperature (Kelvin)"
+                  value: temperature
+                - label: "RGB Color (Hue)"
+                  value: rgb
+              mode: dropdown
     temperature_section:
       name: Temperature
       icon: mdi:lightbulb-variant
@@ -146,6 +167,35 @@ blueprint:
               min: 50
               max: 700
               step: 50
+              mode: slider
+    rgb_section:
+      name: RGB Color
+      icon: mdi:palette-outline
+      collapsed: true
+      input:
+        helper_hue_step:
+          name: Hue step size
+          description: >
+            How many degrees (0–360) the hue shifts per press or hold step.
+            Smaller values = smoother transitions, larger = more dramatic color jumps.
+          default: 30
+          selector:
+            number:
+              unit_of_measurement: "°"
+              min: 5
+              max: 90
+              step: 5
+              mode: slider
+        helper_saturation:
+          name: Saturation
+          description: Color saturation for RGB mode (100 = fully saturated).
+          default: 100
+          selector:
+            number:
+              unit_of_measurement: "%"
+              min: 10
+              max: 100
+              step: 5
               mode: slider
     styrbar_options_section:
       name: Styrbar options
@@ -222,10 +272,14 @@ triggers:
     payload: arrow_right_release
     id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
+  helper_color_mode: !input helper_color_mode
   helper_force_brightness: !input helper_force_brightness
-  helper_hold_delay: 0.1
+  helper_force_temperature: !input helper_force_temperature
+  helper_hold_delay: !input helper_hold_delay
   helper_hold_dim_step: 4
   helper_hold_temp_step: !input helper_temperature_step
+  helper_hue_step: !input helper_hue_step
+  helper_saturation: !input helper_saturation
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
@@ -247,6 +301,16 @@ actions:
           - choose:
               - conditions:
                   - condition: template
+                    value_template: "{{ helper_force_brightness and helper_force_temperature }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      brightness_pct: !input helper_brightness
+                      kelvin: !input helper_temperature
+              - conditions:
+                  - condition: template
                     value_template: "{{ helper_force_brightness }}"
                 sequence:
                   - action: light.turn_on
@@ -262,16 +326,6 @@ actions:
                     target:
                       entity_id: !input light
                     data:
-                      kelvin: !input helper_temperature
-              - conditions:
-                  - condition: template
-                    value_template: "{{ helper_force_brightness and helper_force_temperature }}"
-                sequence:
-                  - action: light.turn_on
-                    target:
-                      entity_id: !input light
-                    data:
-                      brightness_pct: !input helper_brightness
                       kelvin: !input helper_temperature
             default:
               - action: light.turn_on
@@ -292,21 +346,47 @@ actions:
             id:
               - press-arrow-left-z2m-e2001-e2002
         sequence:
-          - action: light.turn_on
-            target:
-              entity_id: !input light
-            data:
-              kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      hs_color:
+                        - "{{ ((state_attr(light, 'hs_color')[0] | float(0) - helper_hue_step) % 360) }}"
+                        - "{{ helper_saturation }}"
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
       - conditions:
           - condition: trigger
             id:
               - press-arrow-right-z2m-e2001-e2002
         sequence:
-          - action: light.turn_on
-            target:
-              entity_id: !input light
-            data:
-              kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      hs_color:
+                        - "{{ ((state_attr(light, 'hs_color')[0] | float(0) + helper_hue_step) % 360) }}"
+                        - "{{ helper_saturation }}"
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
       #
       # Actions for up button long press
       - conditions:
@@ -324,7 +404,7 @@ actions:
                             entity_id: !input light
                           data:
                             brightness_step_pct: "{{ helper_hold_dim_step }}"
-                            transition: "{{ helper_hold_delay }}"
+                            transition: "{{ helper_hold_delay / 1000 }}"
                     - sequence:
                         - choose:
                             - conditions:
@@ -359,7 +439,7 @@ actions:
                             entity_id: !input light
                           data:
                             brightness_step_pct: "{{ helper_hold_dim_step | int * -1 }}"
-                            transition: "{{ helper_hold_delay }}"
+                            transition: "{{ helper_hold_delay / 1000 }}"
                     - sequence:
                         - choose:
                             - conditions:
@@ -389,12 +469,26 @@ actions:
               sequence:
                 - parallel:
                     - sequence:
-                        - action: light.turn_on
-                          target:
-                            entity_id: !input light
-                          data:
-                            kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
-                            transition: "{{ helper_hold_delay }}"
+                        - choose:
+                            - conditions:
+                                - condition: template
+                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                              sequence:
+                                - action: light.turn_on
+                                  target:
+                                    entity_id: !input light
+                                  data:
+                                    hs_color:
+                                      - "{{ ((state_attr(light, 'hs_color')[0] | float(0) - helper_hue_step) % 360) }}"
+                                      - "{{ helper_saturation }}"
+                                    transition: "{{ helper_hold_delay / 1000 }}"
+                          default:
+                            - action: light.turn_on
+                              target:
+                                entity_id: !input light
+                              data:
+                                kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
+                                transition: "{{ helper_hold_delay / 1000 }}"
                     - sequence:
                         - choose:
                             - conditions:
@@ -424,12 +518,26 @@ actions:
               sequence:
                 - parallel:
                     - sequence:
-                        - action: light.turn_on
-                          target:
-                            entity_id: !input light
-                          data:
-                            kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
-                            transition: "{{ helper_hold_delay }}"
+                        - choose:
+                            - conditions:
+                                - condition: template
+                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                              sequence:
+                                - action: light.turn_on
+                                  target:
+                                    entity_id: !input light
+                                  data:
+                                    hs_color:
+                                      - "{{ ((state_attr(light, 'hs_color')[0] | float(0) + helper_hue_step) % 360) }}"
+                                      - "{{ helper_saturation }}"
+                                    transition: "{{ helper_hold_delay / 1000 }}"
+                          default:
+                            - action: light.turn_on
+                              target:
+                                entity_id: !input light
+                              data:
+                                kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
+                                transition: "{{ helper_hold_delay / 1000 }}"
                     - sequence:
                         - choose:
                             - conditions:

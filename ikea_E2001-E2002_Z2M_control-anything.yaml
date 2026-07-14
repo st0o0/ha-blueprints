@@ -103,7 +103,7 @@ blueprint:
         action: {}
     off_hold_action:
       name: Hold "off" action
-      description: Choose action(s) to run when **on** (Styrbar) button is **held**.
+      description: Choose action(s) to run when **off** (Styrbar) button is **held**.
       default: []
       selector:
         action: {}
@@ -305,7 +305,7 @@ actions:
                   - conditions:
                       - condition: trigger
                         id:
-                          - press-on-z2m-e1743-e2201
+                          - press-on-z2m-e2001-e2002
                     sequence:
                       - wait_for_trigger:
                           - trigger: mqtt
@@ -334,7 +334,7 @@ actions:
                   - conditions:
                       - condition: trigger
                         id:
-                          - press-off-z2m-e1743-e2201
+                          - press-off-z2m-e2001-e2002
                     sequence:
                       - wait_for_trigger:
                           - trigger: mqtt

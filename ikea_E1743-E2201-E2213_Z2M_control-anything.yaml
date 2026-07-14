@@ -253,7 +253,7 @@ actions:
                             value_template: "{{ wait.trigger.idx is defined }}"
                         then: !input on_double_press_action
                         else: !input on_press_action
-
+                default: !input on_press_action
             else: !input on_press_action
       - conditions:
           - condition: trigger

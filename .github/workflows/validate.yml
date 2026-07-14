@@ -1,0 +1,96 @@
+name: Validate Blueprints
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "*.yaml"
+      - ".yamllint.yml"
+
+jobs:
+  yamllint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: "*.yaml"
+          config_file: .yamllint.yml
+
+  blueprint-schema:
+    name: Blueprint Schema
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        uses: mikefarah/yq@v4
+
+      - name: Validate blueprint structure
+        shell: bash
+        run: |
+          exit_code=0
+
+          for file in *.yaml; do
+            [ -f "$file" ] || continue
+            echo "::group::Validating $file"
+
+            # blueprint top-level key
+            if [ "$(yq '.blueprint | type' "$file")" != "!!map" ]; then
+              echo "::error file=$file::Missing or invalid 'blueprint' top-level key"
+              exit_code=1
+            fi
+
+            # blueprint.domain must be "automation"
+            domain=$(yq '.blueprint.domain' "$file")
+            if [ "$domain" != "automation" ]; then
+              echo "::error file=$file::blueprint.domain must be 'automation', got '$domain'"
+              exit_code=1
+            fi
+
+            # blueprint.name must exist
+            name=$(yq '.blueprint.name' "$file")
+            if [ "$name" = "null" ] || [ -z "$name" ]; then
+              echo "::error file=$file::blueprint.name is missing"
+              exit_code=1
+            fi
+
+            # blueprint.input must exist
+            if [ "$(yq '.blueprint.input | type' "$file")" != "!!map" ]; then
+              echo "::error file=$file::blueprint.input is missing or invalid"
+              exit_code=1
+            fi
+
+            # triggers must exist
+            if [ "$(yq '.triggers | type' "$file")" != "!!seq" ]; then
+              echo "::error file=$file::triggers is missing or not a list"
+              exit_code=1
+            fi
+
+            # actions must exist
+            if [ "$(yq '.actions | type' "$file")" != "!!seq" ]; then
+              echo "::error file=$file::actions is missing or not a list"
+              exit_code=1
+            fi
+
+            # mode must be set
+            mode=$(yq '.mode' "$file")
+            case "$mode" in
+              single|restart|queued|parallel) ;;
+              *)
+                echo "::error file=$file::mode must be single/restart/queued/parallel, got '$mode'"
+                exit_code=1
+                ;;
+            esac
+
+            if [ $exit_code -eq 0 ]; then
+              echo "OK"
+            fi
+
+            echo "::endgroup::"
+          done
+
+          exit $exit_code
