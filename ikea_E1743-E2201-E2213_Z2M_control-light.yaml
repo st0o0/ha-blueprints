@@ -134,18 +134,18 @@ triggers:
     id: release-hold-dots2-z2m-e2213
 variables:
   helper_force_brightness: !input helper_force_brightness
-  helper_hold_delay: 0.1
+  helper_hold_delay: 0.25
   helper_hold_dim_step: 4
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
   remote_devices: !input remote_devices
-  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('replace', 'RODRETS/', '') | list }}"
+  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
 condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt) 
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
       }}
 actions:
   - choose:

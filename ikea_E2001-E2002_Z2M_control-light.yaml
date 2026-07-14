@@ -1,0 +1,559 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: Ikea's Styrbar 💡 Light control
+  description: |
+    ## 💡 IKEA STYRBAR – Smart Light Control for Home Assistant
+
+    Control your lights, scenes, or automations using the **IKEA STYRBAR Remote (E2001/E2002)** via Zigbee2MQTT.
+    This blueprint combines simple setup with advanced options — perfect for intuitive and smooth light control.
+
+    ---
+
+    ### 🧠 Features
+    - Turn lights **on/off**
+    - Adjust **brightness** (tap or hold)
+    - Change **color temperature** (left = warmer 🔥, right = cooler ❄️) or **RGB hue**
+    - Optional **force settings** for brightness and temperature when switching on
+    - Supports **multiple remotes** controlling the same light or scene
+
+    ---
+
+    | Button | Single Press | Hold Action |
+    |:-------|:-------------|:-------------|
+    | 🔼 **Top (ON)** | Turn light on / apply forced brightness or temperature | Gradually increase brightness |
+    | 🔽 **Bottom (OFF)** | Turn light off | Gradually decrease brightness |
+    | ◀ **Left** | Warmer / previous hue | Continuously decrease temperature / cycle hue left |
+    | ▶ **Right** | Cooler / next hue | Continuously increase temperature / cycle hue right |
+
+    ---
+
+    ### ⚙️ Compatibility
+    - 🧩 **Integration:** Zigbee2MQTT (via `integration: mqtt`)
+    - 💬 Not compatible with ZHA
+    - Supports both `E2001` and `E2002` models
+    - Backward compatible with older MQTT device names
+
+    ---
+
+    ### 🔧 Advanced Options
+    - **Color Mode** → Choose between color temperature (Kelvin) or RGB (Hue) for arrow buttons
+    - **Force Brightness** → Apply a fixed brightness level when the light turns on
+    - **Force Temperature** → Apply a fixed color temperature when the light turns on
+    - **Hold Delay** → Time between repeated actions while a button is held
+    - **Max Loops** → Maximum number of repetitions while holding a button
+
+    ---
+
+    ### 💡 Example Use Cases
+    - Dim your living room lights with smooth transitions
+    - Switch easily between warm evening light and cool daylight
+    - Use multiple STYRBAR remotes for the same lights
+    - Map buttons to trigger automations or activate scenes
+
+    ---
+
+    ### 🌈 Temperature Control Tip
+    The default step size for color temperature changes is **400 K**.
+    - For **smoother transitions** → use 200–400 K
+    - For **faster, visible changes** → use 600–1000 K
+
+    ---
+
+    ✨ Created by **st0o0**
+    Enhanced for clarity, consistency, and modern Home Assistant style ❤️
+  input:
+    remote_devices:
+      name: Remotes
+      description: >
+        IKEA remote (Styrbar, Tradfri) to use.
+      default: []
+      selector:
+        device:
+          filter:
+            - integration: mqtt
+              manufacturer: IKEA
+              model: STYRBAR remote control
+            # DEPRECATED - for removal, keeping for z2m v1 backward compatibility
+            - integration: mqtt
+              manufacturer: IKEA
+              model: STYRBAR remote control (E2001/E2002)
+          multiple: true
+    light:
+      name: Light
+      description: Light to control
+      selector:
+        entity:
+          filter:
+            domain: light
+          multiple: false
+    brightness_section:
+      name: Brightness
+      icon: mdi:lightbulb-on-50
+      collapsed: true
+      input:
+        helper_force_brightness:
+          name: Force brightness
+          description: Force the brightness to **Brightness** value when light turns on.
+          default: false
+          selector:
+            boolean: {}
+        helper_brightness:
+          name: Brightness
+          description:
+            Target light brightness when turning on. Requires **Force brightness**
+            to be enabled.
+          default: 50
+          selector:
+            number:
+              unit_of_measurement: "%"
+              min: 1.0
+              max: 100.0
+              step: 1.0
+              mode: slider
+    color_mode_section:
+      name: Color mode
+      icon: mdi:palette
+      collapsed: true
+      input:
+        helper_color_mode:
+          name: Arrow button color mode
+          description: >
+            Choose what the **left/right arrow buttons** control.
+            **Temperature** adjusts warm/cool white (Kelvin).
+            **RGB** cycles through hue colors.
+          default: temperature
+          selector:
+            select:
+              options:
+                - label: "Color Temperature (Kelvin)"
+                  value: temperature
+                - label: "RGB Color (Hue)"
+                  value: rgb
+              mode: dropdown
+    temperature_section:
+      name: Temperature
+      icon: mdi:lightbulb-variant
+      collapsed: true
+      input:
+        helper_force_temperature:
+          name: Force temperature
+          description: Force the temperature to **Temperature** value when light turns on.
+          default: false
+          selector:
+            boolean: {}
+        helper_temperature:
+          name: Light Temperature
+          description:
+            Target light temperature when turning on. Requires **Force temperature**
+            to be enabled.
+          default: 2700
+          selector:
+            number:
+              unit_of_measurement: "K"
+              min: 2000
+              max: 6500
+              step: 100
+              mode: slider
+        helper_temperature_step:
+          name: Light Temperature steps
+          description: Light temperature step size for **holding**.
+          default: 300
+          selector:
+            number:
+              unit_of_measurement: "K"
+              min: 50
+              max: 700
+              step: 50
+              mode: slider
+    rgb_section:
+      name: RGB Color
+      icon: mdi:palette-outline
+      collapsed: true
+      input:
+        helper_hue_step:
+          name: Hue step size
+          description: >
+            How many degrees (0–360) the hue shifts per press or hold step.
+            Smaller values = smoother transitions, larger = more dramatic color jumps.
+          default: 30
+          selector:
+            number:
+              unit_of_measurement: "°"
+              min: 5
+              max: 90
+              step: 5
+              mode: slider
+        helper_saturation:
+          name: Saturation
+          description: Color saturation for RGB mode (100 = fully saturated).
+          default: 100
+          selector:
+            number:
+              unit_of_measurement: "%"
+              min: 10
+              max: 100
+              step: 5
+              mode: slider
+    styrbar_options_section:
+      name: Styrbar options
+      icon: mdi:remote
+      collapsed: true
+      input:
+        helper_hold_delay:
+          name: Hold delay
+          description: Delay between the execution of the **Hold** action(s).
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_max_loops:
+          name: Max number of loops
+          description: Maximum number of loops when holding down a button.
+          default: 20
+          selector:
+            number:
+              min: 1.0
+              max: 1000.0
+              step: 1.0
+              mode: slider
+mode: restart
+max_exceeded: silent
+triggers:
+  # Styrbar (E2001/E2002)
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: "on"
+    id: press-on-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: "off"
+    id: press-off-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: brightness_move_up
+    id: hold-up-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: brightness_move_down
+    id: hold-down-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: brightness_stop
+    id: release-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_left_click
+    id: press-arrow-left-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_left_hold
+    id: hold-arrow-left-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_left_release
+    id: release-hold-arrow-left-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_right_click
+    id: press-arrow-right-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_right_hold
+    id: hold-arrow-right-z2m-e2001-e2002
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: arrow_right_release
+    id: release-hold-arrow-right-z2m-e2001-e2002
+variables:
+  helper_color_mode: !input helper_color_mode
+  helper_force_brightness: !input helper_force_brightness
+  helper_force_temperature: !input helper_force_temperature
+  helper_hold_delay: !input helper_hold_delay
+  helper_hold_dim_step: 4
+  helper_hold_temp_step: !input helper_temperature_step
+  helper_hue_step: !input helper_hue_step
+  helper_saturation: !input helper_saturation
+  is_mqtt: "{{ trigger.platform == 'mqtt' }}"
+  light: !input light
+  mqtt_topic: "{{ trigger.topic }}"
+  remote_devices: !input remote_devices
+  remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
+condition:
+  - condition: template
+    value_template: >-
+      {{
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
+      }}
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - press-on-z2m-e2001-e2002
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_force_brightness and helper_force_temperature }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      brightness_pct: !input helper_brightness
+                      kelvin: !input helper_temperature
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_force_brightness }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      brightness_pct: !input helper_brightness
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_force_temperature }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      kelvin: !input helper_temperature
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data: {}
+      - conditions:
+          - condition: trigger
+            id:
+              - press-off-z2m-e2001-e2002
+        sequence:
+          - action: light.turn_off
+            target:
+              entity_id: !input light
+            data: {}
+      - conditions:
+          - condition: trigger
+            id:
+              - press-arrow-left-z2m-e2001-e2002
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      hs_color:
+                        - "{{ ((state_attr(light, 'hs_color')[0] | float(0) - helper_hue_step) % 360) }}"
+                        - "{{ helper_saturation }}"
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
+      - conditions:
+          - condition: trigger
+            id:
+              - press-arrow-right-z2m-e2001-e2002
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: !input light
+                    data:
+                      hs_color:
+                        - "{{ ((state_attr(light, 'hs_color')[0] | float(0) + helper_hue_step) % 360) }}"
+                        - "{{ helper_saturation }}"
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
+      #
+      # Actions for up button long press
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-up-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence:
+                        - action: light.turn_on
+                          target:
+                            entity_id: !input light
+                          data:
+                            brightness_step_pct: "{{ helper_hold_dim_step }}"
+                            transition: "{{ helper_hold_delay / 1000 }}"
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-up-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-down-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence:
+                        - action: light.turn_on
+                          target:
+                            entity_id: !input light
+                          data:
+                            brightness_step_pct: "{{ helper_hold_dim_step | int * -1 }}"
+                            transition: "{{ helper_hold_delay / 1000 }}"
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-down-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-arrow-left-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: template
+                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                              sequence:
+                                - action: light.turn_on
+                                  target:
+                                    entity_id: !input light
+                                  data:
+                                    hs_color:
+                                      - "{{ ((state_attr(light, 'hs_color')[0] | float(0) - helper_hue_step) % 360) }}"
+                                      - "{{ helper_saturation }}"
+                                    transition: "{{ helper_hold_delay / 1000 }}"
+                          default:
+                            - action: light.turn_on
+                              target:
+                                entity_id: !input light
+                              data:
+                                kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
+                                transition: "{{ helper_hold_delay / 1000 }}"
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-arrow-left-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "arrow_left_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      - conditions:
+          - condition: trigger
+            id:
+              - hold-arrow-right-z2m-e2001-e2002
+        sequence:
+          - repeat:
+              count: !input helper_max_loops
+              sequence:
+                - parallel:
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: template
+                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                              sequence:
+                                - action: light.turn_on
+                                  target:
+                                    entity_id: !input light
+                                  data:
+                                    hs_color:
+                                      - "{{ ((state_attr(light, 'hs_color')[0] | float(0) + helper_hue_step) % 360) }}"
+                                      - "{{ helper_saturation }}"
+                                    transition: "{{ helper_hold_delay / 1000 }}"
+                          default:
+                            - action: light.turn_on
+                              target:
+                                entity_id: !input light
+                              data:
+                                kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
+                                transition: "{{ helper_hold_delay / 1000 }}"
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-arrow-right-z2m-e2001-e2002
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "arrow_right_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
