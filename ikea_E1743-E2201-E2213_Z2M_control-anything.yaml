@@ -84,7 +84,7 @@ blueprint:
     off_double_press_action:
       name: Double press "off / 2 dots" action
       description: >
-        Choose action(s) to run when the **off** (Rodret, Tradfri) or **2 dots** (Somrig) button is **pressed twice**. 
+        Choose action(s) to run when the **off** (Rodret, Tradfri) or **2 dots** (Somrig) button is **pressed twice**.
 
         **_NB for Rodret, Tradfri only_**: **Double press event (off)** must be exposed and **Double press delay** interval is used as a timeout.
       default: []
@@ -124,7 +124,7 @@ blueprint:
         on_double_press_exposed:
           name: Expose virtual double press "on" event
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **on** button. 
+            Choose whether or not to expose the virtual **double press** event for the **on** button.
             Turn this on if you are providing action(s) for the **Double press action (on / 1 dot)**.
           default: false
           selector:
@@ -132,7 +132,7 @@ blueprint:
         off_double_press_exposed:
           name: Expose virtual double press "off" event
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **off** button. 
+            Choose whether or not to expose the virtual **double press** event for the **off** button.
             Turn this on if you are providing an action for the **Double press action (off / 2 dots)**.
           default: false
           selector:
@@ -221,7 +221,7 @@ condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt) 
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
       }}
 actions:
   - choose:

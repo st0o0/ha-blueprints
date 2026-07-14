@@ -7,7 +7,7 @@ blueprint:
   description: |
     ## ⚙️ IKEA STYRBAR Remote – Light & Scene Control for Home Assistant
 
-    This blueprint lets you control your **lights, scenes, or automations** using one or more  
+    This blueprint lets you control your **lights, scenes, or automations** using one or more
     **IKEA STYRBAR remotes (E2001 / E2002)** paired via **Zigbee2MQTT**.
 
     It provides full flexibility for press, hold, and double-press actions — ideal for creating a seamless, intuitive lighting experience.
@@ -15,9 +15,9 @@ blueprint:
     ---
 
     ### 🧩 Integration
-    - Works with **Zigbee2MQTT** (`integration: mqtt`)  
-    - ⚠️ **Not compatible** with ZHA  
-    - Supports both **E2001** and **E2002** models  
+    - Works with **Zigbee2MQTT** (`integration: mqtt`)
+    - ⚠️ **Not compatible** with ZHA
+    - Supports both **E2001** and **E2002** models
     - Backward compatible with older Zigbee2MQTT entity naming
 
     For setup help, see [MQTT integration documentation](https://www.home-assistant.io/integrations/mqtt).
@@ -32,39 +32,39 @@ blueprint:
     | 🔽 **Bottom (OFF)** | Single press | Turn light **off** |
     | ◀ **Left** | Single press | Decrease brightness / Previous scene |
     | ▶ **Right** | Single press | Increase brightness / Next scene |
-    
-    Holding **ON/OFF** smoothly adjusts brightness up or down. 
+
+    Holding **ON/OFF** smoothly adjusts brightness up or down.
     Holding **Left/Right** can change color temperature, scene, or any custom action.
 
     ---
 
     ### ⚙️ Advanced Options
 
-    - **Double Press Support** – Optional for all buttons (requires exposing double-press events)  
-    - **Hold Delay** – Controls how fast actions repeat while holding a button  
-    - **Max Loops** – Limits how many times a hold action repeats  
-    - **Custom Actions** – Assign *any* Home Assistant action to any button event  
+    - **Double Press Support** – Optional for all buttons (requires exposing double-press events)
+    - **Hold Delay** – Controls how fast actions repeat while holding a button
+    - **Max Loops** – Limits how many times a hold action repeats
+    - **Custom Actions** – Assign *any* Home Assistant action to any button event
     - **Multiple Remotes** – Control the same light or scene from several STYRBARs
 
     ---
 
     ### 💡 Example Use Cases
-    - Adjust light brightness and toggle power with a single remote  
-    - Cycle through favorite lighting scenes  
-    - Control multiple lights in a room with one remote  
+    - Adjust light brightness and toggle power with a single remote
+    - Cycle through favorite lighting scenes
+    - Control multiple lights in a room with one remote
     - Trigger automations, modes, or scripts directly from STYRBAR buttons
 
     ---
 
     ### 🧠 Tips
-    - Enable “Expose double press” if your device firmware supports it  
-    - Adjust “Hold delay” for faster or smoother dimming  
-    - Use **arrow buttons** to control color temperature or effects for dynamic scenes  
+    - Enable “Expose double press” if your device firmware supports it
+    - Adjust “Hold delay” for faster or smoother dimming
+    - Use **arrow buttons** to control color temperature or effects for dynamic scenes
     - Combine multiple STYRBARs for advanced multi-room lighting setups
 
     ---
 
-    ✨ Created by **st0o0**  
+    ✨ Created by **st0o0**
     Refined for clarity, readability, and compatibility with the latest **Home Assistant 2024.10+**
   input:
     remote_devices:
@@ -201,7 +201,7 @@ blueprint:
         on_double_press_exposed:
           name: Expose virtual double press "on" event
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **on** button. 
+            Choose whether or not to expose the virtual **double press** event for the **on** button.
             Turn this on if you are providing action(s) for the **Double press action (on / 1 dot)**.
           default: false
           selector:
@@ -209,7 +209,7 @@ blueprint:
         off_double_press_exposed:
           name: Expose virtual double press "off" event
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **off** button. 
+            Choose whether or not to expose the virtual **double press** event for the **off** button.
             Turn this on if you are providing an action for the **Double press action (off / 2 dots)**.
           default: false
           selector:

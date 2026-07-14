@@ -7,7 +7,7 @@ blueprint:
   description: |
     ## 💡 IKEA STYRBAR – Smart Light Control for Home Assistant
 
-    Control your lights, scenes, or automations using the **IKEA STYRBAR Remote (E2001/E2002)** via Zigbee2MQTT.  
+    Control your lights, scenes, or automations using the **IKEA STYRBAR Remote (E2001/E2002)** via Zigbee2MQTT.
     This blueprint combines simple setup with advanced options — perfect for intuitive and smooth light control.
 
     ---
@@ -32,8 +32,8 @@ blueprint:
 
     ### ⚙️ Compatibility
     - 🧩 **Integration:** Zigbee2MQTT (via `integration: mqtt`)
-    - 💬 Not compatible with ZHA  
-    - Supports both `E2001` and `E2002` models  
+    - 💬 Not compatible with ZHA
+    - Supports both `E2001` and `E2002` models
     - Backward compatible with older MQTT device names
 
     ---
@@ -48,21 +48,21 @@ blueprint:
     ---
 
     ### 💡 Example Use Cases
-    - Dim your living room lights with smooth transitions  
-    - Switch easily between warm evening light and cool daylight  
-    - Use multiple STYRBAR remotes for the same lights  
-    - Map buttons to trigger automations or activate scenes  
+    - Dim your living room lights with smooth transitions
+    - Switch easily between warm evening light and cool daylight
+    - Use multiple STYRBAR remotes for the same lights
+    - Map buttons to trigger automations or activate scenes
 
     ---
 
     ### 🌈 Temperature Control Tip
-    The default step size for color temperature changes is **400 K**.  
-    - For **smoother transitions** → use 200–400 K  
-    - For **faster, visible changes** → use 600–1000 K  
+    The default step size for color temperature changes is **400 K**.
+    - For **smoother transitions** → use 200–400 K
+    - For **faster, visible changes** → use 600–1000 K
 
     ---
 
-    ✨ Created by **st0o0**  
+    ✨ Created by **st0o0**
     Enhanced for clarity, consistency, and modern Home Assistant style ❤️
   input:
     remote_devices:
