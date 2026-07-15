@@ -42,9 +42,10 @@ blueprint:
     ---
 
     ### 🔄 Color Mode Toggle
-    To toggle between Temperature and RGB mode at runtime, create an `input_boolean`
-    helper in Home Assistant, assign it under **Color mode toggle entity**, and enable
-    **Expose double press OFF**. Double pressing the OFF button will then toggle the mode.
+    The arrow buttons automatically detect the light's current color mode.
+    Enable **Expose double press OFF** to toggle between Temperature and RGB
+    by double pressing the OFF button — no helper entity needed.
+    The **Default color mode** is used as fallback when the light is off.
 
     ---
 
@@ -108,11 +109,12 @@ blueprint:
         helper_color_mode:
           name: Default color mode
           description: >
-            Controls what the **left/right arrow buttons** adjust.
-            **Temperature** changes warm/cool white (Kelvin),
+            Preferred color mode for the **left/right arrow buttons**.
+            **Temperature** adjusts warm/cool white (Kelvin),
             **RGB** cycles through hue colors.
-            If a **Color mode toggle entity** is configured, the runtime state
-            of that entity overrides this setting.
+            Used as fallback when the light is off or its color mode
+            cannot be determined. When the light is on, the arrows
+            automatically follow its current color mode.
           default: temperature
           selector:
             select:
@@ -122,19 +124,6 @@ blueprint:
                 - label: "RGB Color (Hue)"
                   value: rgb
               mode: dropdown
-        helper_color_mode_entity:
-          name: Color mode toggle entity (optional)
-          description: >
-            An `input_boolean` helper for **runtime toggling** between Temperature
-            and RGB mode. **Off** = Temperature, **On** = RGB.
-            Enable **Expose double press OFF** to toggle this with the remote.
-            Leave empty to use only the static default color mode above.
-          default: []
-          selector:
-            entity:
-              filter:
-                domain: input_boolean
-              multiple: false
     temperature_section:
       name: Temperature
       icon: mdi:lightbulb-variant
@@ -153,7 +142,8 @@ blueprint:
           description: >
             Target color temperature when turning on (requires **Force temperature**
             to be enabled). Also used as the standard temperature for
-            **double press ON** in Temperature mode.
+            **double press ON** in Temperature mode and as the target when
+            toggling from RGB to Temperature mode.
           default: 2700
           selector:
             number:
@@ -183,8 +173,8 @@ blueprint:
         helper_default_hue:
           name: Standard hue
           description: >
-            Default hue value (0-360) applied when **double press ON** is used
-            in RGB mode.
+            Default hue value (0–360) applied when **double press ON** is used
+            in RGB mode, or when toggling from Temperature to RGB mode.
           default: 30
           selector:
             number:
@@ -196,7 +186,7 @@ blueprint:
         helper_hue_step:
           name: Hue step size
           description: >
-            How many degrees (0-360) the hue shifts per arrow press or hold step.
+            How many degrees (0–360) the hue shifts per arrow press or hold step.
             Smaller values give smoother transitions, larger values more dramatic jumps.
           default: 30
           selector:
@@ -229,7 +219,7 @@ blueprint:
           description: >
             Enable **double press** detection on the **ON** button.
             Double pressing applies the standard brightness and color values
-            (temperature or RGB depending on the active color mode).
+            (temperature or RGB depending on the light's current color mode).
             Adds a small delay to single press detection.
           default: false
           selector:
@@ -238,8 +228,8 @@ blueprint:
           name: Expose double press OFF
           description: >
             Enable **double press** detection on the **OFF** button.
-            Double pressing toggles between Temperature and RGB color mode.
-            Requires a **Color mode toggle entity** to be configured.
+            Double pressing toggles between Temperature and RGB color mode
+            by switching the light directly — no helper entity needed.
             Adds a small delay to single press detection.
           default: false
           selector:
@@ -332,7 +322,6 @@ triggers:
     id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
   helper_color_mode: !input helper_color_mode
-  helper_color_mode_entity: !input helper_color_mode_entity
   helper_default_hue: !input helper_default_hue
   helper_force_brightness: !input helper_force_brightness
   helper_force_temperature: !input helper_force_temperature
@@ -349,8 +338,11 @@ variables:
   remote_devices: !input remote_devices
   remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
   effective_color_mode: >-
-    {% if helper_color_mode_entity is defined and helper_color_mode_entity not in ['', none, 'unknown'] %}
-      {{ 'rgb' if is_state(helper_color_mode_entity, 'on') else 'temperature' }}
+    {% set cm = state_attr(light, 'color_mode') %}
+    {% if cm == 'color_temp' %}
+      temperature
+    {% elif cm in ['hs', 'rgb', 'xy'] %}
+      rgb
     {% else %}
       {{ helper_color_mode }}
     {% endif %}
@@ -492,13 +484,24 @@ actions:
                   - condition: template
                     value_template: "{{ wait.trigger.idx is defined }}"
                 then:
-                  - if:
-                      - condition: template
-                        value_template: "{{ helper_color_mode_entity is defined and helper_color_mode_entity not in ['', none, 'unknown'] }}"
-                    then:
-                      - action: input_boolean.toggle
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ effective_color_mode == 'temperature' }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              hs_color:
+                                - "{{ helper_default_hue }}"
+                                - "{{ helper_saturation }}"
+                    default:
+                      - action: light.turn_on
                         target:
-                          entity_id: !input helper_color_mode_entity
+                          entity_id: !input light
+                        data:
+                          color_temp_kelvin: !input helper_temperature
                 else:
                   - action: light.turn_off
                     target:
