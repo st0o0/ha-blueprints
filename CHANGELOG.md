@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/st0o0/ha-blueprints/compare/v0.1.0...v0.1.1) (2026-07-15)
+
+
+### Features
+
+* **blueprints:** Improve IKEA remote blueprint descriptions ([f2b7860](https://github.com/st0o0/ha-blueprints/commit/f2b7860f39e2da216495d2485b79e531a597499a))
+
 ## 0.1.0 (2026-07-14)
 
 
