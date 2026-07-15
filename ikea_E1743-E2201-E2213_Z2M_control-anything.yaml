@@ -4,24 +4,52 @@ blueprint:
   author: damru / st0o0
   domain: automation
   name: Ikea's Rodret, Somrig or Tradfri ⚙️ Controls
-  description: >
-    ## ⚙️ Control anything with **IKEA RODRET** or **IKEA SOMRIG** or **IKEA TRADFRI ON/OFF** remotes
+  description: |
+    ## ⚙️ IKEA RODRET / SOMRIG / TRADFRI – Universal Remote Control for Home Assistant
 
-    Only for use with Zigbee2MQTT (cf [MQTT](https://www.home-assistant.io/integrations/mqtt)).
+    Assign **any Home Assistant action** to every button of the **IKEA RODRET (E2201)**,
+    **SOMRIG (E2213)**, or **TRADFRI ON/OFF (E1743)** remotes via Zigbee2MQTT.
+    Full flexibility for single press, double press, and hold.
 
-    Available controls:
+    ---
 
-    - Single press **on/off** (Rodret, Tradfri)  **1 dot/2 dots** (Somrig)
+    ### 🧠 Features
+    - 🎯 **Custom actions** for every button event (press, hold, double press)
+    - ⏩ **Double press** — native on SOMRIG, virtual on RODRET/TRADFRI
+    - 🔁 **Hold repeat** with adjustable delay and max loop count
+    - 📱 Supports **multiple remotes** controlling the same targets
 
-    - Double press **on/off** (Rodret, Tradfri, _Optional_)  **1 dot/2 dots** (Somrig)
+    ---
 
-    - Hold **on/off** (Rodret, Tradfri)  **1 dot/2 dots** (Somrig).
-    Actions will be executed every **Hold delay**, but maximum **Max number of loops** times.
+    ### 🎛️ Button Layout
+
+    | Button | Single Press | Double Press | Hold |
+    |:-------|:-------------|:------------|:-----|
+    | 🔼 **ON** (Rodret/Tradfri) · **1 dot** (Somrig) | Custom action | Custom action (optional) | Custom action (repeated) |
+    | 🔽 **OFF** (Rodret/Tradfri) · **2 dots** (Somrig) | Custom action | Custom action (optional) | Custom action (repeated) |
+
+    ---
+
+    ### ⚙️ Compatibility
+    - 🧩 **Integration:** Zigbee2MQTT (`integration: mqtt`)
+    - 💬 Not compatible with ZHA
+    - Supports **RODRET** (E2201), **SOMRIG** (E2213), and **TRADFRI ON/OFF** (E1743)
+
+    ---
+
+    ### 💡 Double Press Notes
+    - **SOMRIG:** Native double press support via Zigbee2MQTT
+    - **RODRET / TRADFRI:** Virtual double press via timing detection — enable
+      **Expose double press** and configure the **Double press delay**
+
+    ---
+
+    ✨ Created by **damru / st0o0**
   input:
     remote_devices:
-      name: Remotes
+      name: 📱 Remotes
       description: >
-        IKEA remote (Rodret, Somrig, Tradfri) to use.
+        One or more IKEA remotes (RODRET, SOMRIG, or TRADFRI ON/OFF) paired via Zigbee2MQTT.
       default: []
       selector:
         device:
@@ -49,55 +77,55 @@ blueprint:
               model: TRADFRI on/off switch (E1743)
           multiple: true
     on_press_action:
-      name: Press "on / 1 dot" action
-      description: Choose action(s) to run when **on** (Rodret, Tradfri) or **1 dot** (Somrig) button is **pressed**.
+      name: 🔼 Press ON / 1 dot action
+      description: Action(s) to run when the **ON** (Rodret/Tradfri) or **1 dot** (Somrig) button is **pressed**.
       default: []
       selector:
         action: {}
     off_press_action:
-      name: Press "off / 2 dots" action
-      description: Choose action(s) to run when **off** (Rodret, Tradfri) or **2 dots** (Somrig) button is **pressed**.
+      name: 🔽 Press OFF / 2 dots action
+      description: Action(s) to run when the **OFF** (Rodret/Tradfri) or **2 dots** (Somrig) button is **pressed**.
       default: []
       selector:
         action: {}
     on_hold_action:
-      name: Hold "on / 1 dot" action
-      description: Choose action(s) to run when **on** (Rodret, Tradfri) or **1 dot** (Somrig) button is **held**.
+      name: 🔼 Hold ON / 1 dot action
+      description: Action(s) to run repeatedly when the **ON** (Rodret/Tradfri) or **1 dot** (Somrig) button is **held**.
       default: []
       selector:
         action: {}
     off_hold_action:
-      name: Hold "off / 2 dots" action
-      description: Choose action(s) to run when **off** (Rodret, Tradfri) or **2 dots** (Somrig) button is **held**.
+      name: 🔽 Hold OFF / 2 dots action
+      description: Action(s) to run repeatedly when the **OFF** (Rodret/Tradfri) or **2 dots** (Somrig) button is **held**.
       default: []
       selector:
         action: {}
     on_double_press_action:
-      name: Double press "on / 1 dot" action
+      name: ⏩ Double press ON / 1 dot action
       description: >
-        Choose action(s) to run when the **on** (Rodret, Tradfri) or **1 dot** (Somrig) button is **pressed twice**.
-
-        **_NB for Rodret, Tradfri only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+        Action(s) to run when the **ON** (Rodret/Tradfri) or **1 dot** (Somrig) button is **pressed twice**.
+        For Rodret/Tradfri: requires **Expose double press ON** to be enabled.
       default: []
       selector:
         action: {}
     off_double_press_action:
-      name: Double press "off / 2 dots" action
+      name: ⏩ Double press OFF / 2 dots action
       description: >
-        Choose action(s) to run when the **off** (Rodret, Tradfri) or **2 dots** (Somrig) button is **pressed twice**.
-
-        **_NB for Rodret, Tradfri only_**: **Double press event (off)** must be exposed and **Double press delay** interval is used as a timeout.
+        Action(s) to run when the **OFF** (Rodret/Tradfri) or **2 dots** (Somrig) button is **pressed twice**.
+        For Rodret/Tradfri: requires **Expose double press OFF** to be enabled.
       default: []
       selector:
         action: {}
     helper_section:
-      name: Helpers
+      name: ⏱️ Timing
       icon: mdi:cog-outline
       collapsed: true
       input:
         helper_hold_delay:
           name: Hold delay
-          description: Delay between the execution of the **Hold** action(s).
+          description: >
+            Time between repeated actions while a button is held down.
+            Lower values give faster response, higher values give more control.
           default: 250
           selector:
             number:
@@ -107,8 +135,10 @@ blueprint:
               step: 10.0
               mode: slider
         helper_max_loops:
-          name: Max number of loops
-          description: Maximum number of loops when holding down a button.
+          name: Max hold loops
+          description: >
+            Maximum number of action repetitions while holding a button.
+            Prevents infinite loops if button release is not detected.
           default: 20
           selector:
             number:
@@ -117,33 +147,33 @@ blueprint:
               step: 1.0
               mode: slider
     rodret_tradfri_options_section:
-      name: Rodret, Tradfri options
+      name: 🔄 Double press options (Rodret/Tradfri only)
       icon: mdi:remote
       collapsed: true
       input:
         on_double_press_exposed:
-          name: Expose virtual double press "on" event
+          name: Expose double press ON
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **on** button.
-            Turn this on if you are providing action(s) for the **Double press action (on / 1 dot)**.
+            Enable virtual **double press** detection for the **ON** button.
+            Only needed for Rodret/Tradfri — SOMRIG has native double press.
+            Adds a small delay to single press detection.
           default: false
           selector:
             boolean: {}
         off_double_press_exposed:
-          name: Expose virtual double press "off" event
+          name: Expose double press OFF
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **off** button.
-            Turn this on if you are providing an action for the **Double press action (off / 2 dots)**.
+            Enable virtual **double press** detection for the **OFF** button.
+            Only needed for Rodret/Tradfri — SOMRIG has native double press.
+            Adds a small delay to single press detection.
           default: false
           selector:
             boolean: {}
         helper_double_press_delay:
           name: Double press delay
           description: >
-            Max delay between the first and the second button press for the
-            **Double press events**. Provide a value only if you are using a double press action.
-            Increase this value if you notice that the double press action is not triggered
-            properly.
+            Maximum time between first and second press for double press detection.
+            Increase if double press is not detected reliably.
           default: 250
           selector:
             number:
@@ -152,7 +182,7 @@ blueprint:
               max: 5000.0
               step: 10.0
               mode: slider
-mode: single
+mode: restart
 max_exceeded: silent
 triggers:
   # RODRET (E2201) + TRADFRI (E1743)

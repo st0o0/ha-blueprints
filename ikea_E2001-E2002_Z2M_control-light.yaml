@@ -7,68 +7,53 @@ blueprint:
   description: |
     ## 💡 IKEA STYRBAR – Smart Light Control for Home Assistant
 
-    Control your lights, scenes, or automations using the **IKEA STYRBAR Remote (E2001/E2002)** via Zigbee2MQTT.
+    Control your lights using the **IKEA STYRBAR Remote (E2001/E2002)** via Zigbee2MQTT.
     This blueprint combines simple setup with advanced options — perfect for intuitive and smooth light control.
 
     ---
 
     ### 🧠 Features
-    - Turn lights **on/off**
-    - Adjust **brightness** (tap or hold)
-    - Change **color temperature** (left = warmer 🔥, right = cooler ❄️) or **RGB hue**
-    - Optional **force settings** for brightness and temperature when switching on
-    - Supports **multiple remotes** controlling the same light or scene
+    - 💡 Turn lights **on/off**
+    - 🔆 Adjust **brightness** (tap or hold)
+    - 🌡️ Change **color temperature** (left = warmer 🔥, right = cooler ❄️) or **RGB hue** 🌈
+    - 🎯 Optional **force settings** for brightness and color when switching on
+    - ⏩ **Double press ON** to apply standard values (brightness + temperature or brightness + RGB)
+    - 🔄 **Double press OFF** to toggle between Temperature and RGB color mode at runtime
+    - 📱 Supports **multiple remotes** controlling the same light
 
     ---
 
-    | Button | Single Press | Hold Action |
-    |:-------|:-------------|:-------------|
-    | 🔼 **Top (ON)** | Turn light on / apply forced brightness or temperature | Gradually increase brightness |
-    | 🔽 **Bottom (OFF)** | Turn light off | Gradually decrease brightness |
-    | ◀ **Left** | Warmer / previous hue | Continuously decrease temperature / cycle hue left |
-    | ▶ **Right** | Cooler / next hue | Continuously increase temperature / cycle hue right |
+    ### 🎛️ Button Layout
+
+    | Button | Single Press | Double Press | Hold |
+    |:-------|:-------------|:------------|:-----|
+    | 🔼 **Top (ON)** | Turn on (with optional force values) | Apply standard brightness + color values | Increase brightness |
+    | 🔽 **Bottom (OFF)** | Turn off | Toggle Temperature / RGB mode 🔄 | Decrease brightness |
+    | ◀ **Left** | Warmer 🔥 / previous hue | — | Continuously adjust left |
+    | ▶ **Right** | Cooler ❄️ / next hue | — | Continuously adjust right |
 
     ---
 
     ### ⚙️ Compatibility
-    - 🧩 **Integration:** Zigbee2MQTT (via `integration: mqtt`)
+    - 🧩 **Integration:** Zigbee2MQTT (`integration: mqtt`)
     - 💬 Not compatible with ZHA
     - Supports both `E2001` and `E2002` models
-    - Backward compatible with older MQTT device names
 
     ---
 
-    ### 🔧 Advanced Options
-    - **Color Mode** → Choose between color temperature (Kelvin) or RGB (Hue) for arrow buttons
-    - **Force Brightness** → Apply a fixed brightness level when the light turns on
-    - **Force Temperature** → Apply a fixed color temperature when the light turns on
-    - **Hold Delay** → Time between repeated actions while a button is held
-    - **Max Loops** → Maximum number of repetitions while holding a button
-
-    ---
-
-    ### 💡 Example Use Cases
-    - Dim your living room lights with smooth transitions
-    - Switch easily between warm evening light and cool daylight
-    - Use multiple STYRBAR remotes for the same lights
-    - Map buttons to trigger automations or activate scenes
-
-    ---
-
-    ### 🌈 Temperature Control Tip
-    The default step size for color temperature changes is **400 K**.
-    - For **smoother transitions** → use 200–400 K
-    - For **faster, visible changes** → use 600–1000 K
+    ### 🔄 Color Mode Toggle
+    To toggle between Temperature and RGB mode at runtime, create an `input_boolean`
+    helper in Home Assistant, assign it under **Color mode toggle entity**, and enable
+    **Expose double press OFF**. Double pressing the OFF button will then toggle the mode.
 
     ---
 
     ✨ Created by **st0o0**
-    Enhanced for clarity, consistency, and modern Home Assistant style ❤️
   input:
     remote_devices:
-      name: Remotes
+      name: 📱 Remotes
       description: >
-        IKEA remote (Styrbar, Tradfri) to use.
+        One or more IKEA STYRBAR remotes (E2001/E2002) paired via Zigbee2MQTT.
       default: []
       selector:
         device:
@@ -82,8 +67,8 @@ blueprint:
               model: STYRBAR remote control (E2001/E2002)
           multiple: true
     light:
-      name: Light
-      description: Light to control
+      name: 💡 Light
+      description: The light entity to control with this remote.
       selector:
         entity:
           filter:
@@ -95,16 +80,18 @@ blueprint:
       collapsed: true
       input:
         helper_force_brightness:
-          name: Force brightness
-          description: Force the brightness to **Brightness** value when light turns on.
+          name: Force brightness on turn on
+          description: >
+            When enabled, the light will always turn on at the configured
+            **Brightness** value instead of its previous level.
           default: false
           selector:
             boolean: {}
         helper_brightness:
           name: Brightness
-          description:
-            Target light brightness when turning on. Requires **Force brightness**
-            to be enabled.
+          description: >
+            Target brightness when turning on (requires **Force brightness** to be enabled).
+            Also used as the standard brightness for **double press ON**.
           default: 50
           selector:
             number:
@@ -119,11 +106,13 @@ blueprint:
       collapsed: true
       input:
         helper_color_mode:
-          name: Arrow button color mode
+          name: Default color mode
           description: >
-            Choose what the **left/right arrow buttons** control.
-            **Temperature** adjusts warm/cool white (Kelvin).
+            Controls what the **left/right arrow buttons** adjust.
+            **Temperature** changes warm/cool white (Kelvin),
             **RGB** cycles through hue colors.
+            If a **Color mode toggle entity** is configured, the runtime state
+            of that entity overrides this setting.
           default: temperature
           selector:
             select:
@@ -133,22 +122,38 @@ blueprint:
                 - label: "RGB Color (Hue)"
                   value: rgb
               mode: dropdown
+        helper_color_mode_entity:
+          name: Color mode toggle entity (optional)
+          description: >
+            An `input_boolean` helper for **runtime toggling** between Temperature
+            and RGB mode. **Off** = Temperature, **On** = RGB.
+            Enable **Expose double press OFF** to toggle this with the remote.
+            Leave empty to use only the static default color mode above.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_boolean
+              multiple: false
     temperature_section:
       name: Temperature
       icon: mdi:lightbulb-variant
       collapsed: true
       input:
         helper_force_temperature:
-          name: Force temperature
-          description: Force the temperature to **Temperature** value when light turns on.
+          name: Force temperature on turn on
+          description: >
+            When enabled, the light will always turn on at the configured
+            **Temperature** value instead of its previous color temperature.
           default: false
           selector:
             boolean: {}
         helper_temperature:
-          name: Light Temperature
-          description:
-            Target light temperature when turning on. Requires **Force temperature**
-            to be enabled.
+          name: Temperature
+          description: >
+            Target color temperature when turning on (requires **Force temperature**
+            to be enabled). Also used as the standard temperature for
+            **double press ON** in Temperature mode.
           default: 2700
           selector:
             number:
@@ -158,8 +163,10 @@ blueprint:
               step: 100
               mode: slider
         helper_temperature_step:
-          name: Light Temperature steps
-          description: Light temperature step size for **holding**.
+          name: Temperature step size
+          description: >
+            How much the color temperature changes per arrow press or hold step.
+            Smaller values give smoother transitions, larger values faster changes.
           default: 300
           selector:
             number:
@@ -173,11 +180,24 @@ blueprint:
       icon: mdi:palette-outline
       collapsed: true
       input:
+        helper_default_hue:
+          name: Standard hue
+          description: >
+            Default hue value (0-360) applied when **double press ON** is used
+            in RGB mode.
+          default: 30
+          selector:
+            number:
+              unit_of_measurement: "°"
+              min: 0
+              max: 360
+              step: 5
+              mode: slider
         helper_hue_step:
           name: Hue step size
           description: >
-            How many degrees (0–360) the hue shifts per press or hold step.
-            Smaller values = smoother transitions, larger = more dramatic color jumps.
+            How many degrees (0-360) the hue shifts per arrow press or hold step.
+            Smaller values give smoother transitions, larger values more dramatic jumps.
           default: 30
           selector:
             number:
@@ -188,7 +208,9 @@ blueprint:
               mode: slider
         helper_saturation:
           name: Saturation
-          description: Color saturation for RGB mode (100 = fully saturated).
+          description: >
+            Color saturation for RGB mode (100 = fully saturated).
+            Also used as the standard saturation for **double press ON** in RGB mode.
           default: 100
           selector:
             number:
@@ -198,13 +220,48 @@ blueprint:
               step: 5
               mode: slider
     styrbar_options_section:
-      name: Styrbar options
+      name: 🔄 Double press & timing options
       icon: mdi:remote
       collapsed: true
       input:
+        on_double_press_exposed:
+          name: Expose double press ON
+          description: >
+            Enable **double press** detection on the **ON** button.
+            Double pressing applies the standard brightness and color values
+            (temperature or RGB depending on the active color mode).
+            Adds a small delay to single press detection.
+          default: false
+          selector:
+            boolean: {}
+        off_double_press_exposed:
+          name: Expose double press OFF
+          description: >
+            Enable **double press** detection on the **OFF** button.
+            Double pressing toggles between Temperature and RGB color mode.
+            Requires a **Color mode toggle entity** to be configured.
+            Adds a small delay to single press detection.
+          default: false
+          selector:
+            boolean: {}
+        helper_double_press_delay:
+          name: Double press delay
+          description: >
+            Maximum time between first and second press for double press detection.
+            Increase if double press is not detected reliably.
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
         helper_hold_delay:
           name: Hold delay
-          description: Delay between the execution of the **Hold** action(s).
+          description: >
+            Time between repeated actions while a button is held down.
+            Lower values give faster response, higher values give more control.
           default: 250
           selector:
             number:
@@ -214,8 +271,10 @@ blueprint:
               step: 10.0
               mode: slider
         helper_max_loops:
-          name: Max number of loops
-          description: Maximum number of loops when holding down a button.
+          name: Max hold loops
+          description: >
+            Maximum number of action repetitions while holding a button.
+            Prevents infinite loops if button release is not detected.
           default: 20
           selector:
             number:
@@ -273,6 +332,8 @@ triggers:
     id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
   helper_color_mode: !input helper_color_mode
+  helper_color_mode_entity: !input helper_color_mode_entity
+  helper_default_hue: !input helper_default_hue
   helper_force_brightness: !input helper_force_brightness
   helper_force_temperature: !input helper_force_temperature
   helper_hold_delay: !input helper_hold_delay
@@ -283,8 +344,16 @@ variables:
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
+  on_double_press_exposed: !input on_double_press_exposed
+  off_double_press_exposed: !input off_double_press_exposed
   remote_devices: !input remote_devices
   remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
+  effective_color_mode: >-
+    {% if helper_color_mode_entity is defined and helper_color_mode_entity not in ['', none, 'unknown'] %}
+      {{ 'rgb' if is_state(helper_color_mode_entity, 'on') else 'temperature' }}
+    {% else %}
+      {{ helper_color_mode }}
+    {% endif %}
 condition:
   - condition: template
     value_template: >-
@@ -298,49 +367,148 @@ actions:
             id:
               - press-on-z2m-e2001-e2002
         sequence:
-          - choose:
-              - conditions:
+          - if:
+              - condition: template
+                value_template: "{{ on_double_press_exposed }}"
+            then:
+              - wait_for_trigger:
+                  - trigger: mqtt
+                    topic: "{{ mqtt_topic }}"
+                    payload: "on"
+                timeout:
+                  milliseconds: !input helper_double_press_delay
+                continue_on_timeout: true
+              - if:
                   - condition: template
-                    value_template: "{{ helper_force_brightness and helper_force_temperature }}"
-                sequence:
+                    value_template: "{{ wait.trigger.idx is defined }}"
+                then:
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ effective_color_mode == 'rgb' }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                              hs_color:
+                                - "{{ helper_default_hue }}"
+                                - "{{ helper_saturation }}"
+                    default:
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data:
+                          brightness_pct: !input helper_brightness
+                          color_temp_kelvin: !input helper_temperature
+                else:
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ helper_force_brightness and helper_force_temperature }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                              color_temp_kelvin: !input helper_temperature
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ helper_force_brightness }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ helper_force_temperature }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              color_temp_kelvin: !input helper_temperature
+                    default:
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data: {}
+            else:
+              - choose:
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ helper_force_brightness and helper_force_temperature }}"
+                    sequence:
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data:
+                          brightness_pct: !input helper_brightness
+                          color_temp_kelvin: !input helper_temperature
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ helper_force_brightness }}"
+                    sequence:
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data:
+                          brightness_pct: !input helper_brightness
+                  - conditions:
+                      - condition: template
+                        value_template: "{{ helper_force_temperature }}"
+                    sequence:
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data:
+                          color_temp_kelvin: !input helper_temperature
+                default:
                   - action: light.turn_on
                     target:
                       entity_id: !input light
-                    data:
-                      brightness_pct: !input helper_brightness
-                      kelvin: !input helper_temperature
-              - conditions:
-                  - condition: template
-                    value_template: "{{ helper_force_brightness }}"
-                sequence:
-                  - action: light.turn_on
-                    target:
-                      entity_id: !input light
-                    data:
-                      brightness_pct: !input helper_brightness
-              - conditions:
-                  - condition: template
-                    value_template: "{{ helper_force_temperature }}"
-                sequence:
-                  - action: light.turn_on
-                    target:
-                      entity_id: !input light
-                    data:
-                      kelvin: !input helper_temperature
-            default:
-              - action: light.turn_on
-                target:
-                  entity_id: !input light
-                data: {}
+                    data: {}
       - conditions:
           - condition: trigger
             id:
               - press-off-z2m-e2001-e2002
         sequence:
-          - action: light.turn_off
-            target:
-              entity_id: !input light
-            data: {}
+          - if:
+              - condition: template
+                value_template: "{{ off_double_press_exposed }}"
+            then:
+              - wait_for_trigger:
+                  - trigger: mqtt
+                    topic: "{{ mqtt_topic }}"
+                    payload: "off"
+                timeout:
+                  milliseconds: !input helper_double_press_delay
+                continue_on_timeout: true
+              - if:
+                  - condition: template
+                    value_template: "{{ wait.trigger.idx is defined }}"
+                then:
+                  - if:
+                      - condition: template
+                        value_template: "{{ helper_color_mode_entity is defined and helper_color_mode_entity not in ['', none, 'unknown'] }}"
+                    then:
+                      - action: input_boolean.toggle
+                        target:
+                          entity_id: !input helper_color_mode_entity
+                else:
+                  - action: light.turn_off
+                    target:
+                      entity_id: !input light
+                    data: {}
+            else:
+              - action: light.turn_off
+                target:
+                  entity_id: !input light
+                data: {}
       - conditions:
           - condition: trigger
             id:
@@ -349,7 +517,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                    value_template: "{{ effective_color_mode == 'rgb' }}"
                 sequence:
                   - action: light.turn_on
                     target:
@@ -363,7 +531,7 @@ actions:
                 target:
                   entity_id: !input light
                 data:
-                  kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
+                  color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
       - conditions:
           - condition: trigger
             id:
@@ -372,7 +540,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                    value_template: "{{ effective_color_mode == 'rgb' }}"
                 sequence:
                   - action: light.turn_on
                     target:
@@ -386,7 +554,7 @@ actions:
                 target:
                   entity_id: !input light
                 data:
-                  kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
+                  color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
       #
       # Actions for up button long press
       - conditions:
@@ -472,7 +640,7 @@ actions:
                         - choose:
                             - conditions:
                                 - condition: template
-                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                                  value_template: "{{ effective_color_mode == 'rgb' }}"
                               sequence:
                                 - action: light.turn_on
                                   target:
@@ -487,7 +655,7 @@ actions:
                               target:
                                 entity_id: !input light
                               data:
-                                kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
+                                color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int - helper_hold_temp_step, 2000] | max }}"
                                 transition: "{{ helper_hold_delay / 1000 }}"
                     - sequence:
                         - choose:
@@ -521,7 +689,7 @@ actions:
                         - choose:
                             - conditions:
                                 - condition: template
-                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                                  value_template: "{{ effective_color_mode == 'rgb' }}"
                               sequence:
                                 - action: light.turn_on
                                   target:
@@ -536,7 +704,7 @@ actions:
                               target:
                                 entity_id: !input light
                               data:
-                                kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
+                                color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int + helper_hold_temp_step, 6500] | min }}"
                                 transition: "{{ helper_hold_delay / 1000 }}"
                     - sequence:
                         - choose:

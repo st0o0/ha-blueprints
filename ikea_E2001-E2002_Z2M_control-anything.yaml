@@ -5,72 +5,53 @@ blueprint:
   domain: automation
   name: Ikea's Styrbar ⚙️ Controls
   description: |
-    ## ⚙️ IKEA STYRBAR Remote – Light & Scene Control for Home Assistant
+    ## ⚙️ IKEA STYRBAR – Universal Remote Control for Home Assistant
 
-    This blueprint lets you control your **lights, scenes, or automations** using one or more
-    **IKEA STYRBAR remotes (E2001 / E2002)** paired via **Zigbee2MQTT**.
-
-    It provides full flexibility for press, hold, and double-press actions — ideal for creating a seamless, intuitive lighting experience.
+    Assign **any Home Assistant action** to every button of the **IKEA STYRBAR Remote (E2001/E2002)** via Zigbee2MQTT.
+    Full flexibility for single press, double press, and hold — perfect for lights, scenes, scripts, or automations.
 
     ---
 
-    ### 🧩 Integration
-    - Works with **Zigbee2MQTT** (`integration: mqtt`)
-    - ⚠️ **Not compatible** with ZHA
-    - Supports both **E2001** and **E2002** models
-    - Backward compatible with older Zigbee2MQTT entity naming
-
-    For setup help, see [MQTT integration documentation](https://www.home-assistant.io/integrations/mqtt).
+    ### 🧠 Features
+    - 🎯 **Custom actions** for every button event (press, hold, double press)
+    - ⏩ **Virtual double press** detection with configurable delay
+    - 🔁 **Hold repeat** with adjustable delay and max loop count
+    - 📱 Supports **multiple remotes** controlling the same targets
 
     ---
 
-    ### 🎛️ Button Layout & Default Functions
+    ### 🎛️ Button Layout
 
-    | Button | Action | Typical Usage |
-    |:--------|:--------|:--------------|
-    | 🔼 **Top (ON)** | Single press | Turn light **on**, or trigger a scene |
-    | 🔽 **Bottom (OFF)** | Single press | Turn light **off** |
-    | ◀ **Left** | Single press | Decrease brightness / Previous scene |
-    | ▶ **Right** | Single press | Increase brightness / Next scene |
-
-    Holding **ON/OFF** smoothly adjusts brightness up or down.
-    Holding **Left/Right** can change color temperature, scene, or any custom action.
+    | Button | Single Press | Double Press | Hold |
+    |:-------|:-------------|:------------|:-----|
+    | 🔼 **Top (ON)** | Custom action | Custom action (optional) | Custom action (repeated) |
+    | 🔽 **Bottom (OFF)** | Custom action | Custom action (optional) | Custom action (repeated) |
+    | ◀ **Left** | Custom action | Custom action (optional) | Custom action (repeated) |
+    | ▶ **Right** | Custom action | Custom action (optional) | Custom action (repeated) |
 
     ---
 
-    ### ⚙️ Advanced Options
-
-    - **Double Press Support** – Optional for all buttons (requires exposing double-press events)
-    - **Hold Delay** – Controls how fast actions repeat while holding a button
-    - **Max Loops** – Limits how many times a hold action repeats
-    - **Custom Actions** – Assign *any* Home Assistant action to any button event
-    - **Multiple Remotes** – Control the same light or scene from several STYRBARs
+    ### ⚙️ Compatibility
+    - 🧩 **Integration:** Zigbee2MQTT (`integration: mqtt`)
+    - 💬 Not compatible with ZHA
+    - Supports both `E2001` and `E2002` models
 
     ---
 
     ### 💡 Example Use Cases
-    - Adjust light brightness and toggle power with a single remote
-    - Cycle through favorite lighting scenes
-    - Control multiple lights in a room with one remote
-    - Trigger automations, modes, or scripts directly from STYRBAR buttons
-
-    ---
-
-    ### 🧠 Tips
-    - Enable “Expose double press” if your device firmware supports it
-    - Adjust “Hold delay” for faster or smoother dimming
-    - Use **arrow buttons** to control color temperature or effects for dynamic scenes
-    - Combine multiple STYRBARs for advanced multi-room lighting setups
+    - Toggle lights on/off and adjust brightness with hold
+    - Cycle through favorite scenes with arrow buttons
+    - Double press to trigger special automations or modes
+    - Control multiple rooms from one remote
 
     ---
 
     ✨ Created by **st0o0**
-    Refined for clarity, readability, and compatibility with the latest **Home Assistant 2024.10+**
   input:
     remote_devices:
-      name: Remotes
+      name: 📱 Remotes
       description: >
-        IKEA remote (Styrbar) to use.
+        One or more IKEA STYRBAR remotes (E2001/E2002) paired via Zigbee2MQTT.
       default: []
       selector:
         device:
@@ -84,97 +65,95 @@ blueprint:
               model: STYRBAR remote control (E2001/E2002)
           multiple: true
     on_press_action:
-      name: Press "on" action
-      description: Choose action(s) to run when **on** (Styrbar) button is **pressed**.
+      name: 🔼 Press ON action
+      description: Action(s) to run when the **ON** button is **pressed**.
       default: []
       selector:
         action: {}
     off_press_action:
-      name: Press "off" action
-      description: Choose action(s) to run when **off** (Styrbar) button is **pressed**.
+      name: 🔽 Press OFF action
+      description: Action(s) to run when the **OFF** button is **pressed**.
       default: []
       selector:
         action: {}
     on_hold_action:
-      name: Hold "on" action
-      description: Choose action(s) to run when **on** (Styrbar) button is **held**.
+      name: 🔼 Hold ON action
+      description: Action(s) to run repeatedly when the **ON** button is **held**.
       default: []
       selector:
         action: {}
     off_hold_action:
-      name: Hold "off" action
-      description: Choose action(s) to run when **off** (Styrbar) button is **held**.
+      name: 🔽 Hold OFF action
+      description: Action(s) to run repeatedly when the **OFF** button is **held**.
       default: []
       selector:
         action: {}
     arrow_left_press_action:
-      name: Press "arrow_left_click" action
-      description: Choose action(s) to run when **arrow_left_click** (Styrbar) button is **pressed**.
+      name: ◀ Press Left action
+      description: Action(s) to run when the **Left arrow** button is **pressed**.
       default: []
       selector:
         action: {}
     arrow_right_press_action:
-      name: Press "arrow_right_click" action
-      description: Choose action(s) to run when **arrow_right_click** (Styrbar) button is **pressed**.
+      name: ▶ Press Right action
+      description: Action(s) to run when the **Right arrow** button is **pressed**.
       default: []
       selector:
         action: {}
     arrow_left_hold_action:
-      name: Hold "arrow_left_hold" action
-      description: Choose action(s) to run when **arrow_left_hold** (Styrbar) button is **held**.
+      name: ◀ Hold Left action
+      description: Action(s) to run repeatedly when the **Left arrow** button is **held**.
       default: []
       selector:
         action: {}
     arrow_right_hold_action:
-      name: Hold "arrow_right_hold" action
-      description: Choose action(s) to run when **arrow_right_hold** (Styrbar) button is **held**.
+      name: ▶ Hold Right action
+      description: Action(s) to run repeatedly when the **Right arrow** button is **held**.
       default: []
       selector:
         action: {}
     on_double_press_action:
-      name: Double press "on" action
+      name: ⏩ Double press ON action
       description: >
-        Choose action(s) to run when the **on** (Styrbar) button is **pressed twice**.
-
-        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+        Action(s) to run when the **ON** button is **pressed twice**.
+        Requires **Expose double press ON** to be enabled.
       default: []
       selector:
         action: {}
     off_double_press_action:
-      name: Double press "off" action
+      name: ⏩ Double press OFF action
       description: >
-        Choose action(s) to run when the **off** (Styrbar) button is **pressed twice**.
-
-        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+        Action(s) to run when the **OFF** button is **pressed twice**.
+        Requires **Expose double press OFF** to be enabled.
       default: []
       selector:
         action: {}
     arrow_left_click_double_press_action:
-      name: Double press "arrow_left_click" action
+      name: ⏩ Double press Left action
       description: >
-        Choose action(s) to run when the **arrow_left_click** (Styrbar) button is **pressed twice**.
-
-        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+        Action(s) to run when the **Left arrow** button is **pressed twice**.
+        Requires **Expose double press ON** to be enabled.
       default: []
       selector:
         action: {}
     arrow_right_click_double_press_action:
-      name: Double press "arrow_right_click" action
+      name: ⏩ Double press Right action
       description: >
-        Choose action(s) to run when the **arrow_right_click** (Styrbar) button is **pressed twice**.
-
-        **_NB for Styrbar only_**: **Double press event (on)** must be exposed and **Double press delay** interval is used as a timeout.
+        Action(s) to run when the **Right arrow** button is **pressed twice**.
+        Requires **Expose double press ON** to be enabled.
       default: []
       selector:
         action: {}
     helper_section:
-      name: Helpers
+      name: ⏱️ Timing
       icon: mdi:cog-outline
       collapsed: true
       input:
         helper_hold_delay:
           name: Hold delay
-          description: Delay between the execution of the **Hold** action(s).
+          description: >
+            Time between repeated actions while a button is held down.
+            Lower values give faster response, higher values give more control.
           default: 250
           selector:
             number:
@@ -184,8 +163,10 @@ blueprint:
               step: 10.0
               mode: slider
         helper_max_loops:
-          name: Max number of loops
-          description: Maximum number of loops when holding down a button.
+          name: Max hold loops
+          description: >
+            Maximum number of action repetitions while holding a button.
+            Prevents infinite loops if button release is not detected.
           default: 20
           selector:
             number:
@@ -194,33 +175,31 @@ blueprint:
               step: 1.0
               mode: slider
     styrbar_options_section:
-      name: Styrbar options
+      name: 🔄 Double press options
       icon: mdi:remote
       collapsed: true
       input:
         on_double_press_exposed:
-          name: Expose virtual double press "on" event
+          name: Expose double press ON
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **on** button.
-            Turn this on if you are providing action(s) for the **Double press action (on / 1 dot)**.
+            Enable virtual **double press** detection for the **ON** and **arrow** buttons.
+            Adds a small delay to single press detection.
           default: false
           selector:
             boolean: {}
         off_double_press_exposed:
-          name: Expose virtual double press "off" event
+          name: Expose double press OFF
           description: >
-            Choose whether or not to expose the virtual **double press** event for the **off** button.
-            Turn this on if you are providing an action for the **Double press action (off / 2 dots)**.
+            Enable virtual **double press** detection for the **OFF** button.
+            Adds a small delay to single press detection.
           default: false
           selector:
             boolean: {}
         helper_double_press_delay:
           name: Double press delay
           description: >
-            Max delay between the first and the second button press for the
-            **Double press events**. Provide a value only if you are using a double press action.
-            Increase this value if you notice that the double press action is not triggered
-            properly.
+            Maximum time between first and second press for double press detection.
+            Increase if double press is not detected reliably.
           default: 250
           selector:
             number:

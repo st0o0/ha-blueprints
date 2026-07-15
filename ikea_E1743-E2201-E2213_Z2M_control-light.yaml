@@ -4,26 +4,44 @@ blueprint:
   author: damru / st0o0
   domain: automation
   name: Ikea's Rodret, Somrig or Tradfri 💡 Light control
-  description: >
-    ## 💡 Control a light with **IKEA RODRET** or **IKEA SOMRIG** or **IKEA TRADFRI ON/OFF** remotes
+  description: |
+    ## 💡 IKEA RODRET / SOMRIG / TRADFRI – Light Control for Home Assistant
 
-    Only for use with Zigbee2MQTT (cf [MQTT](https://www.home-assistant.io/integrations/mqtt)).
+    Control a light using the **IKEA RODRET (E2201)**, **SOMRIG (E2213)**, or **TRADFRI ON/OFF (E1743)** remotes via Zigbee2MQTT.
+    Simple two-button control with optional force brightness on turn on.
 
-    Available controls:
+    ---
 
-    - Press **on** (Rodret, Tradfri) or **1 dot** (Somrig) to turn on the light
-    (Optional: set the target brightness by enabling **Force Brightness** and setting a **Brightness** value)
+    ### 🧠 Features
+    - 💡 Turn lights **on/off** with a single press
+    - 🔆 Adjust **brightness** smoothly by holding buttons
+    - 🎯 Optional **force brightness** to set a fixed level when turning on
+    - 📱 Supports **multiple remotes** controlling the same light
 
-    - Press **off** (Rodret, Tradfri) or **2 dots** (Somrig) to turn off the light
+    ---
 
-    - Hold **on** (Rodret, Tradfri) or **1 dot** (Somrig) button to increase the brightness
+    ### 🎛️ Button Layout
 
-    - Hold **off** (Rodret, Tradfri) or **2 dots** (Somrig) button to decrease the brightness down to 1%
+    | Button | Single Press | Hold |
+    |:-------|:-------------|:-----|
+    | 🔼 **ON** (Rodret/Tradfri) · **1 dot** (Somrig) | Turn light on | Increase brightness |
+    | 🔽 **OFF** (Rodret/Tradfri) · **2 dots** (Somrig) | Turn light off | Decrease brightness (down to 1%) |
+
+    ---
+
+    ### ⚙️ Compatibility
+    - 🧩 **Integration:** Zigbee2MQTT (`integration: mqtt`)
+    - 💬 Not compatible with ZHA
+    - Supports **RODRET** (E2201), **SOMRIG** (E2213), and **TRADFRI ON/OFF** (E1743)
+
+    ---
+
+    ✨ Created by **damru / st0o0**
   input:
     remote_devices:
-      name: Remotes
+      name: 📱 Remotes
       description: >
-        IKEA remote (Rodret, Somrig, Tradfri) to use.
+        One or more IKEA remotes (RODRET, SOMRIG, or TRADFRI ON/OFF) paired via Zigbee2MQTT.
       default: []
       selector:
         device:
@@ -51,8 +69,8 @@ blueprint:
               model: TRADFRI on/off switch (E1743)
           multiple: true
     light:
-      name: Light
-      description: Light to control
+      name: 💡 Light
+      description: The light entity to control with this remote.
       selector:
         entity:
           filter:
@@ -64,15 +82,17 @@ blueprint:
       collapsed: true
       input:
         helper_force_brightness:
-          name: Force brightness
-          description: Force the brightness to **Brightness** value when light turns on.
+          name: Force brightness on turn on
+          description: >
+            When enabled, the light will always turn on at the configured
+            **Brightness** value instead of its previous level.
           default: false
           selector:
             boolean: {}
         helper_brightness:
           name: Brightness
-          description:
-            Target light brightness when turning on. Requires **Force brightness**
+          description: >
+            Target brightness when turning on. Requires **Force brightness**
             to be enabled.
           default: 50
           selector:
