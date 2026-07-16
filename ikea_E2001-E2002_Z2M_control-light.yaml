@@ -17,7 +17,7 @@ blueprint:
     - 🔆 Adjust **brightness** (tap or hold)
     - 🌡️ Change **color temperature** (left = warmer 🔥, right = cooler ❄️) or **RGB hue** 🌈
     - ⏩ **Double press ON** to apply default values (brightness + temperature or brightness + RGB)
-    - 🔄 Optional **color mode switch** via double press OFF (Temperature ↔ RGB)
+    - 🔄 **Color mode switch** via double press OFF — toggles arrow buttons between Temperature and RGB
     - 📱 Supports **multiple remotes** controlling the same light
 
     ---
@@ -27,7 +27,7 @@ blueprint:
     | Button | Single Press | Double Press | Hold |
     |:-------|:-------------|:------------|:-----|
     | 🔼 **Top (ON)** | Turn on | Apply default brightness + color values | Increase brightness |
-    | 🔽 **Bottom (OFF)** | Turn off | Switch to opposite color mode 🔄 | Decrease brightness |
+    | 🔽 **Bottom (OFF)** | Turn off | Toggle color mode 🔄 (Temperature ↔ RGB) | Decrease brightness |
     | ◀ **Left** | Warmer 🔥 / previous hue | — | Continuously adjust left |
     | ▶ **Right** | Cooler ❄️ / next hue | — | Continuously adjust right |
 
@@ -80,11 +80,12 @@ blueprint:
       collapsed: true
       input:
         helper_color_mode:
-          name: Color mode
+          name: Default color mode
           description: >
-            Controls what the **left/right arrow buttons** adjust.
+            Controls what the **left/right arrow buttons** adjust by default.
             **Temperature** adjusts warm/cool white (Kelvin),
             **RGB** cycles through hue colors.
+            Overridden at runtime by the **Color mode helper** if configured.
           default: temperature
           selector:
             select:
@@ -93,6 +94,35 @@ blueprint:
                   value: temperature
                 - label: "RGB Color (Hue)"
                   value: rgb
+              mode: dropdown
+        helper_color_mode_entity:
+          name: Color mode helper (optional)
+          description: >
+            An `input_select` helper for **runtime color mode switching**.
+            Only needed if **Enable color mode switch** is active.
+            Create an `input_select` helper with options `temperature` and `rgb`.
+            The initial option determines the starting mode.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_select
+              multiple: false
+        helper_mode_switch_effect:
+          name: Mode switch effect
+          description: >
+            What happens to the light when switching color modes
+            via **double press OFF**.
+            **Apply defaults** sets brightness and color to the configured defaults.
+            **Color only** changes only the color, keeping the current brightness.
+          default: apply_defaults
+          selector:
+            select:
+              options:
+                - label: "Apply defaults (brightness + color)"
+                  value: apply_defaults
+                - label: "Color only (keep brightness)"
+                  value: color_only
               mode: dropdown
     default_values_section:
       name: 🎯 Default values
@@ -307,6 +337,9 @@ triggers:
     id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
   helper_color_mode: !input helper_color_mode
+  helper_color_mode_entity: !input helper_color_mode_entity
+  helper_mode_switch_effect: !input helper_mode_switch_effect
+  color_mode: "{{ states(helper_color_mode_entity) if (helper_color_mode_entity is string and helper_color_mode_entity | length > 0 and has_value(helper_color_mode_entity)) else helper_color_mode }}"
   helper_default_hue: !input helper_default_hue
   helper_hold_delay: !input helper_hold_delay
   helper_hold_dim_step: 4
@@ -362,7 +395,7 @@ actions:
                   - choose:
                       - conditions:
                           - condition: template
-                            value_template: "{{ helper_color_mode == 'rgb' }}"
+                            value_template: "{{ color_mode == 'rgb' }}"
                         sequence:
                           - action: light.turn_on
                             target:
@@ -417,25 +450,63 @@ actions:
                           entity_id: !input helper_last_controller_event
                         data:
                           value: ""
-                  # Double press OFF: toggle color mode
+                  # Toggle color mode helper
+                  - if:
+                      - condition: template
+                        value_template: "{{ helper_color_mode_entity is string and helper_color_mode_entity | length > 0 }}"
+                    then:
+                      - action: input_select.select_option
+                        target:
+                          entity_id: !input helper_color_mode_entity
+                        data:
+                          option: "{{ 'rgb' if color_mode == 'temperature' else 'temperature' }}"
+                  # Apply mode switch effect
                   - choose:
+                      # Switching from temperature → RGB
                       - conditions:
                           - condition: template
-                            value_template: "{{ helper_color_mode == 'temperature' }}"
+                            value_template: "{{ color_mode == 'temperature' }}"
                         sequence:
+                          - choose:
+                              - conditions:
+                                  - condition: template
+                                    value_template: "{{ helper_mode_switch_effect == 'apply_defaults' }}"
+                                sequence:
+                                  - action: light.turn_on
+                                    target:
+                                      entity_id: !input light
+                                    data:
+                                      brightness_pct: !input helper_brightness
+                                      hs_color:
+                                        - "{{ helper_default_hue }}"
+                                        - "{{ helper_saturation }}"
+                            default:
+                              - action: light.turn_on
+                                target:
+                                  entity_id: !input light
+                                data:
+                                  hs_color:
+                                    - "{{ helper_default_hue }}"
+                                    - "{{ helper_saturation }}"
+                    # Switching from RGB → temperature
+                    default:
+                      - choose:
+                          - conditions:
+                              - condition: template
+                                value_template: "{{ helper_mode_switch_effect == 'apply_defaults' }}"
+                            sequence:
+                              - action: light.turn_on
+                                target:
+                                  entity_id: !input light
+                                data:
+                                  brightness_pct: !input helper_brightness
+                                  color_temp_kelvin: !input helper_temperature
+                        default:
                           - action: light.turn_on
                             target:
                               entity_id: !input light
                             data:
-                              hs_color:
-                                - "{{ helper_default_hue }}"
-                                - "{{ helper_saturation }}"
-                    default:
-                      - action: light.turn_on
-                        target:
-                          entity_id: !input light
-                        data:
-                          color_temp_kelvin: !input helper_temperature
+                              color_temp_kelvin: !input helper_temperature
             default:
               # Store current event
               - if:
@@ -461,7 +532,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                    value_template: "{{ color_mode == 'rgb' }}"
                 sequence:
                   - action: light.turn_on
                     target:
@@ -485,7 +556,7 @@ actions:
           - choose:
               - conditions:
                   - condition: template
-                    value_template: "{{ helper_color_mode == 'rgb' }}"
+                    value_template: "{{ color_mode == 'rgb' }}"
                 sequence:
                   - action: light.turn_on
                     target:
@@ -586,7 +657,7 @@ actions:
                         - choose:
                             - conditions:
                                 - condition: template
-                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                                  value_template: "{{ color_mode == 'rgb' }}"
                               sequence:
                                 - action: light.turn_on
                                   target:
@@ -636,7 +707,7 @@ actions:
                         - choose:
                             - conditions:
                                 - condition: template
-                                  value_template: "{{ helper_color_mode == 'rgb' }}"
+                                  value_template: "{{ color_mode == 'rgb' }}"
                               sequence:
                                 - action: light.turn_on
                                   target:

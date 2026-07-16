@@ -116,38 +116,8 @@ blueprint:
       default: []
       selector:
         action: {}
-    helper_section:
-      name: ⏱️ Timing
-      icon: mdi:cog-outline
-      collapsed: true
-      input:
-        helper_hold_delay:
-          name: Hold delay
-          description: >
-            Time between repeated actions while a button is held down.
-            Lower values give faster response, higher values give more control.
-          default: 250
-          selector:
-            number:
-              unit_of_measurement: milliseconds
-              min: 100.0
-              max: 5000.0
-              step: 10.0
-              mode: slider
-        helper_max_loops:
-          name: Max hold loops
-          description: >
-            Maximum number of action repetitions while holding a button.
-            Prevents infinite loops if button release is not detected.
-          default: 20
-          selector:
-            number:
-              min: 1.0
-              max: 1000.0
-              step: 1.0
-              mode: slider
-    rodret_tradfri_options_section:
-      name: 🔄 Double press options (Rodret/Tradfri only)
+    options_section:
+      name: ⏱️ Double press & timing
       icon: mdi:remote
       collapsed: true
       input:
@@ -193,6 +163,31 @@ blueprint:
               min: 100.0
               max: 5000.0
               step: 10.0
+              mode: slider
+        helper_hold_delay:
+          name: Hold delay
+          description: >
+            Time between repeated actions while a button is held down.
+            Lower values give faster response, higher values give more control.
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_max_loops:
+          name: Max hold loops
+          description: >
+            Maximum number of action repetitions while holding a button.
+            Prevents infinite loops if button release is not detected.
+          default: 20
+          selector:
+            number:
+              min: 1.0
+              max: 1000.0
+              step: 1.0
               mode: slider
 mode: restart
 max_exceeded: silent
