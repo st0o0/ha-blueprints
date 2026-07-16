@@ -347,3 +347,165 @@ blueprint:
           default: []
           selector:
             action: {}
+
+mode: restart
+max_exceeded: silent
+
+triggers:
+  - trigger: time
+    at: !input window_1_time
+    id: window_1
+  - trigger: time
+    at: !input window_2_time
+    id: window_2
+  - trigger: time
+    at: !input window_3_time
+    id: window_3
+  - trigger: time
+    at: !input window_4_time
+    id: window_4
+
+variables:
+  preset: !input preset
+  user_title: !input notification_title
+  user_message: !input notification_message
+  user_icon: !input notification_icon
+  user_tag: !input notification_tag
+  notify_service: !input notify_service
+  snooze_min: !input snooze_min
+  snooze_max: !input snooze_max
+  max_reminders: !input max_reminders
+  escalation_enabled: !input escalation_enabled
+  escalation_after: !input escalation_after
+  escalation_custom_action: !input escalation_custom_action
+  window_1_enabled: !input window_1_enabled
+  window_2_enabled: !input window_2_enabled
+  window_3_enabled: !input window_3_enabled
+  window_4_enabled: !input window_4_enabled
+  window_1_random_delay_max: !input window_1_random_delay_max
+  window_2_random_delay_max: !input window_2_random_delay_max
+  window_3_random_delay_max: !input window_3_random_delay_max
+  window_4_random_delay_max: !input window_4_random_delay_max
+  triggered_window: "{{ trigger.id | default('window_1') }}"
+  window_number: "{{ triggered_window.split('_')[1] | int(1) }}"
+  window_enabled: >-
+    {%- if window_number == 1 -%}{{ window_1_enabled }}
+    {%- elif window_number == 2 -%}{{ window_2_enabled }}
+    {%- elif window_number == 3 -%}{{ window_3_enabled }}
+    {%- elif window_number == 4 -%}{{ window_4_enabled }}
+    {%- else -%}false{%- endif -%}
+  random_delay_max: >-
+    {%- if window_number == 1 -%}{{ window_1_random_delay_max | int(15) }}
+    {%- elif window_number == 2 -%}{{ window_2_random_delay_max | int(15) }}
+    {%- elif window_number == 3 -%}{{ window_3_random_delay_max | int(15) }}
+    {%- elif window_number == 4 -%}{{ window_4_random_delay_max | int(15) }}
+    {%- else -%}15{%- endif -%}
+  preset_titles:
+    toothbrushing: "Time to brush your teeth!"
+    medication: "Time to take your medication!"
+    trash: "Don't forget to take out the trash!"
+    plants: "Your plants need watering!"
+    custom: "Reminder"
+  preset_messages:
+    toothbrushing: "\U0001FAA5 Your teeth won't brush themselves! Tap Done when you're finished."
+    medication: "\U0001F48A Take your medication now. Tap Done when you've taken it."
+    trash: "\U0001F5D1️ The trash needs to go out. Tap Done when it's done."
+    plants: "\U0001F331 Your plants are thirsty! Tap Done after watering."
+    custom: "Don't forget! Tap Done when the task is complete."
+  preset_icons:
+    toothbrushing: "mdi:toothbrush"
+    medication: "mdi:pill"
+    trash: "mdi:trash-can"
+    plants: "mdi:watering-can"
+    custom: "mdi:bell-ring"
+  resolved_title: >-
+    {{ user_title if user_title | default('', true) | length > 0
+    else preset_titles[preset] | default('Reminder') }}
+  resolved_message: >-
+    {{ user_message if user_message | default('', true) | length > 0
+    else preset_messages[preset] | default('Tap Done when complete.') }}
+  resolved_icon: >-
+    {{ user_icon if user_icon | default('', true) | length > 0
+    else preset_icons[preset] | default('mdi:bell-ring') }}
+  resolved_tag: >-
+    {{ user_tag if user_tag | default('', true) | length > 0
+    else 'adhd_reminder_' ~ this.entity_id | default('unknown') ~ '_w' ~ window_number }}
+  action_tag: >-
+    ADHD_DONE_{{ resolved_tag | upper | replace('.', '_') | replace(' ', '_') }}
+
+condition:
+  - condition: template
+    value_template: "{{ window_enabled | bool(false) }}"
+
+actions:
+  - delay:
+      minutes: "{{ range(0, random_delay_max | int(15) + 1) | random }}"
+  - variables:
+      reminder_count: 0
+  - repeat:
+      while:
+        - condition: template
+          value_template: "{{ max_reminders | int(10) == 0 or repeat.index <= max_reminders | int(10) }}"
+      sequence:
+        - variables:
+            reminder_count: "{{ repeat.index }}"
+            is_escalated: >-
+              {{ escalation_enabled | bool(false)
+              and reminder_count | int >= escalation_after | int(3) }}
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ is_escalated }}"
+              sequence:
+                - choose:
+                    - conditions:
+                        - condition: template
+                          value_template: "{{ escalation_custom_action | default([], true) | length > 0 }}"
+                      sequence: !input escalation_custom_action
+                - action: "{{ notify_service }}"
+                  data:
+                    title: "\U0001F6A8 {{ resolved_title }}"
+                    message: "{{ resolved_message }}"
+                    data:
+                      tag: "{{ resolved_tag }}"
+                      persistent: true
+                      sticky: true
+                      channel: "adhd_reminder_critical"
+                      importance: high
+                      priority: high
+                      ttl: 0
+                      icon_url: "{{ resolved_icon }}"
+                      actions:
+                        - action: "{{ action_tag }}"
+                          title: "Done ✓"
+          default:
+            - action: "{{ notify_service }}"
+              data:
+                title: "{{ resolved_title }}"
+                message: "{{ resolved_message }}"
+                data:
+                  tag: "{{ resolved_tag }}"
+                  sticky: true
+                  channel: "adhd_reminder"
+                  icon_url: "{{ resolved_icon }}"
+                  actions:
+                    - action: "{{ action_tag }}"
+                      title: "Done ✓"
+        - wait_for_trigger:
+            - trigger: event
+              event_type: mobile_app_notification_action
+              event_data:
+                action: "{{ action_tag }}"
+          timeout:
+            minutes: "{{ range(snooze_min | int(4), snooze_max | int(6) + 1) | random }}"
+          continue_on_timeout: true
+        - if:
+            - condition: template
+              value_template: "{{ wait.trigger.idx is defined }}"
+          then:
+            - action: "{{ notify_service }}"
+              data:
+                message: clear_notification
+                data:
+                  tag: "{{ resolved_tag }}"
+            - stop: "Task confirmed done"
