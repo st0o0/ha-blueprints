@@ -267,3 +267,83 @@ blueprint:
               max: 60
               step: 1
               mode: slider
+
+    snooze_section:
+      name: "😴 Snooze settings"
+      icon: mdi:timer-sand
+      collapsed: true
+      input:
+        snooze_min:
+          name: Minimum snooze time
+          description: >
+            Minimum time (in minutes) between repeated notifications.
+            The actual snooze is randomly chosen between min and max.
+          default: 4
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 1
+              max: 30
+              step: 1
+              mode: slider
+        snooze_max:
+          name: Maximum snooze time
+          description: >
+            Maximum time (in minutes) between repeated notifications.
+            Varying the interval prevents subconscious anticipation.
+          default: 6
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 1
+              max: 60
+              step: 1
+              mode: slider
+        max_reminders:
+          name: Maximum reminders
+          description: >
+            Stop after this many reminders if never confirmed.
+            Set to 0 for unlimited reminders (until confirmed or next window).
+          default: 10
+          selector:
+            number:
+              min: 0
+              max: 50
+              step: 1
+              mode: slider
+
+    escalation_section:
+      name: "🚨 Escalation"
+      icon: mdi:alert-circle
+      collapsed: true
+      input:
+        escalation_enabled:
+          name: Enable escalation
+          description: >
+            When enabled, the notification changes after a number of
+            ignored reminders. It can become a critical alert (bypasses
+            Do Not Disturb) or trigger a custom action.
+          default: false
+          selector:
+            boolean: {}
+        escalation_after:
+          name: Escalate after N reminders
+          description: >
+            Number of ignored reminders before escalation kicks in.
+          default: 3
+          selector:
+            number:
+              min: 1
+              max: 20
+              step: 1
+              mode: slider
+        escalation_custom_action:
+          name: Escalation action
+          description: >
+            Custom action to run when escalation triggers.
+            For example, send a notification to a speaker, notify a partner,
+            or flash a light. Leave empty to use critical notification
+            (bypasses Do Not Disturb on the same device).
+          default: []
+          selector:
+            action: {}
