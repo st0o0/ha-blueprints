@@ -82,10 +82,11 @@ blueprint:
         helper_color_mode:
           name: Default color mode
           description: >
-            Controls what the **left/right arrow buttons** adjust by default.
+            Controls what the **left/right arrow buttons** adjust.
             **Temperature** adjusts warm/cool white (Kelvin),
             **RGB** cycles through hue colors.
-            Overridden at runtime by the **Color mode helper** if configured.
+            If you only need temperature mode, leave this at the default
+            and disable **Enable color mode switch**.
           default: temperature
           selector:
             select:
@@ -94,35 +95,6 @@ blueprint:
                   value: temperature
                 - label: "RGB Color (Hue)"
                   value: rgb
-              mode: dropdown
-        helper_color_mode_entity:
-          name: Color mode helper (optional)
-          description: >
-            An `input_select` helper for **runtime color mode switching**.
-            Only needed if **Enable color mode switch** is active.
-            Create an `input_select` helper with options `temperature` and `rgb`.
-            The initial option determines the starting mode.
-          default: []
-          selector:
-            entity:
-              filter:
-                domain: input_select
-              multiple: false
-        helper_mode_switch_effect:
-          name: Mode switch effect
-          description: >
-            What happens to the light when switching color modes
-            via **double press OFF**.
-            **Apply defaults** sets brightness and color to the configured defaults.
-            **Color only** changes only the color, keeping the current brightness.
-          default: apply_defaults
-          selector:
-            select:
-              options:
-                - label: "Apply defaults (brightness + color)"
-                  value: apply_defaults
-                - label: "Color only (keep brightness)"
-                  value: color_only
               mode: dropdown
     default_values_section:
       name: 🎯 Default values
@@ -230,12 +202,43 @@ blueprint:
         helper_enable_mode_switch:
           name: Enable color mode switch
           description: >
-            Enable **double press OFF** to switch the light between color modes
-            (Temperature → RGB, RGB → Temperature).
-            When enabled, double press detection on the OFF button is automatically active.
+            Enable **double press OFF** to toggle between Temperature and RGB mode.
+            When disabled, arrow buttons always use the **Default color mode**
+            and double press OFF is inactive.
+            Requires a **Color mode helper** (`input_select`) to track the current mode.
           default: false
           selector:
             boolean: {}
+        helper_color_mode_entity:
+          name: Color mode helper
+          description: >
+            An `input_select` helper for **runtime color mode switching**.
+            Only needed when **Enable color mode switch** is active.
+            Create an `input_select` helper with options `temperature` and `rgb`.
+            The initial option determines the starting mode.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_select
+              multiple: false
+        helper_mode_switch_effect:
+          name: Mode switch effect
+          description: >
+            What happens to the light when switching color modes
+            via **double press OFF**.
+            Only relevant when **Enable color mode switch** is active.
+            **Apply defaults** sets brightness and color to the configured defaults.
+            **Color only** changes only the color, keeping the current brightness.
+          default: apply_defaults
+          selector:
+            select:
+              options:
+                - label: "Apply defaults (brightness + color)"
+                  value: apply_defaults
+                - label: "Color only (keep brightness)"
+                  value: color_only
+              mode: dropdown
         helper_last_controller_event:
           name: Last controller event helper
           description: >
