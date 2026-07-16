@@ -169,12 +169,24 @@ blueprint:
           default: false
           selector:
             boolean: {}
+        helper_last_controller_event:
+          name: Last controller event helper
+          description: >
+            An `input_text` helper used to store the last button event for
+            double press detection. Create an `input_text` helper in Home Assistant
+            and select it here. Each automation instance needs its own helper.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_text
+              multiple: false
         helper_double_press_delay:
           name: Double press delay
           description: >
             Maximum time between first and second press for double press detection.
             Increase if double press is not detected reliably.
-          default: 250
+          default: 500
           selector:
             number:
               unit_of_measurement: milliseconds
@@ -247,74 +259,139 @@ variables:
   off_double_press_exposed: !input off_double_press_exposed
   remote_devices: !input remote_devices
   remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
+  trigger_action: "{{ trigger.payload | string }}"
+  helper_last_controller_event: !input helper_last_controller_event
+  helper_double_press_delay: !input helper_double_press_delay
+  last_stored: "{{ states(helper_last_controller_event) if (helper_last_controller_event is string and helper_last_controller_event | length > 0 and has_value(helper_last_controller_event)) else '' }}"
+  last_action: "{{ (last_stored | string).split('|')[0] if '|' in (last_stored | string) else '' }}"
+  last_topic: "{{ (last_stored | string).split('|')[1] if ((last_stored | string).split('|') | length) >= 3 else '' }}"
+  last_timestamp: "{{ ((last_stored | string).split('|')[-1]) | float(0) }}"
+  time_delta: "{{ as_timestamp(now()) - last_timestamp }}"
 condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt else false)
       }}
 actions:
   - choose:
+      # --- ON button ---
       - conditions:
           - condition: trigger
             id:
               - press-on-z2m-e1743-e2201
               - press-dots1-z2m-e2213
         sequence:
-          - if:
-              - condition: template
-                value_template: "{{ on_double_press_exposed }}"
-            then:
-              - choose:
-                  - conditions:
-                      - condition: trigger
-                        id:
-                          - press-on-z2m-e1743-e2201
-                    sequence:
-                      - wait_for_trigger:
-                          - trigger: mqtt
-                            topic: "{{ mqtt_topic }}"
-                            payload: "on"
-                        timeout:
-                          milliseconds: !input helper_double_press_delay
-                        continue_on_timeout: true
+          - choose:
+              # RODRET/TRADFRI: EPMatt double press pattern
+              - conditions:
+                  - condition: trigger
+                    id:
+                      - press-on-z2m-e1743-e2201
+                sequence:
+                  - choose:
+                      # Double press detected
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ on_double_press_exposed and (trigger_action | string) == (last_action | string) and mqtt_topic == last_topic and time_delta < (helper_double_press_delay / 1000) }}"
+                        sequence:
+                          # Clear helper to prevent triple-press
+                          - if:
+                              - condition: template
+                                value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                            then:
+                              - action: input_text.set_value
+                                target:
+                                  entity_id: !input helper_last_controller_event
+                                data:
+                                  value: ""
+                          # Double press ON action
+                          - choose: []
+                            default: !input on_double_press_action
+                    default:
+                      # Store current event
                       - if:
                           - condition: template
-                            value_template: "{{ wait.trigger.idx is defined }}"
-                        then: !input on_double_press_action
-                        else: !input on_press_action
+                            value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                        then:
+                          - action: input_text.set_value
+                            target:
+                              entity_id: !input helper_last_controller_event
+                            data:
+                              value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
+                      # Delay (killed by restart on second press)
+                      - if:
+                          - condition: template
+                            value_template: "{{ on_double_press_exposed }}"
+                        then:
+                          - delay:
+                              milliseconds: !input helper_double_press_delay
+                      # Single press ON action
+                      - choose: []
+                        default: !input on_press_action
+            # SOMRIG: no virtual double press needed, direct execution
+            default:
+              - choose: []
                 default: !input on_press_action
-            else: !input on_press_action
+      # --- OFF button ---
       - conditions:
           - condition: trigger
             id:
               - press-off-z2m-e1743-e2201
               - press-dots2-z2m-e2213
         sequence:
-          - if:
-              - condition: template
-                value_template: "{{ off_double_press_exposed }}"
-            then:
-              - choose:
-                  - conditions:
-                      - condition: trigger
-                        id:
-                          - press-off-z2m-e1743-e2201
-                    sequence:
-                      - wait_for_trigger:
-                          - trigger: mqtt
-                            topic: "{{ mqtt_topic }}"
-                            payload: "off"
-                        timeout:
-                          milliseconds: !input helper_double_press_delay
-                        continue_on_timeout: true
+          - choose:
+              # RODRET/TRADFRI: EPMatt double press pattern
+              - conditions:
+                  - condition: trigger
+                    id:
+                      - press-off-z2m-e1743-e2201
+                sequence:
+                  - choose:
+                      # Double press detected
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ off_double_press_exposed and (trigger_action | string) == (last_action | string) and mqtt_topic == last_topic and time_delta < (helper_double_press_delay / 1000) }}"
+                        sequence:
+                          # Clear helper to prevent triple-press
+                          - if:
+                              - condition: template
+                                value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                            then:
+                              - action: input_text.set_value
+                                target:
+                                  entity_id: !input helper_last_controller_event
+                                data:
+                                  value: ""
+                          # Double press OFF action
+                          - choose: []
+                            default: !input off_double_press_action
+                    default:
+                      # Store current event
                       - if:
                           - condition: template
-                            value_template: "{{ wait.trigger.idx is defined }}"
-                        then: !input off_double_press_action
-                        else: !input off_press_action
+                            value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                        then:
+                          - action: input_text.set_value
+                            target:
+                              entity_id: !input helper_last_controller_event
+                            data:
+                              value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
+                      # Delay (killed by restart on second press)
+                      - if:
+                          - condition: template
+                            value_template: "{{ off_double_press_exposed }}"
+                        then:
+                          - delay:
+                              milliseconds: !input helper_double_press_delay
+                      # Single press OFF action
+                      - choose: []
+                        default: !input off_press_action
+            # SOMRIG: no virtual double press needed, direct execution
+            default:
+              - choose: []
                 default: !input off_press_action
-            else: !input off_press_action
+      # --- SOMRIG native double press ---
       - conditions:
           - condition: trigger
             id:
@@ -326,7 +403,7 @@ actions:
               - double-press-dots2-z2m-e2213
         sequence: !input off_double_press_action
       #
-      # Actions for up button long press
+      # --- Hold ON ---
       - conditions:
           - condition: trigger
             id:

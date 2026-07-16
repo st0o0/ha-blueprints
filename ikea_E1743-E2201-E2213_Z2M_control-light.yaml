@@ -8,24 +8,24 @@ blueprint:
     ## 💡 IKEA RODRET / SOMRIG / TRADFRI – Light Control for Home Assistant
 
     Control a light using the **IKEA RODRET (E2201)**, **SOMRIG (E2213)**, or **TRADFRI ON/OFF (E1743)** remotes via Zigbee2MQTT.
-    Simple two-button control with optional force brightness on turn on.
+    Simple two-button control with configurable default brightness and double press support.
 
     ---
 
     ### 🧠 Features
     - 💡 Turn lights **on/off** with a single press
     - 🔆 Adjust **brightness** smoothly by holding buttons
-    - 🎯 Optional **force brightness** to set a fixed level when turning on
+    - ⏩ **Double press ON/OFF** to apply default brightness
     - 📱 Supports **multiple remotes** controlling the same light
 
     ---
 
     ### 🎛️ Button Layout
 
-    | Button | Single Press | Hold |
-    |:-------|:-------------|:-----|
-    | 🔼 **ON** (Rodret/Tradfri) · **1 dot** (Somrig) | Turn light on | Increase brightness |
-    | 🔽 **OFF** (Rodret/Tradfri) · **2 dots** (Somrig) | Turn light off | Decrease brightness (down to 1%) |
+    | Button | Single Press | Double Press | Hold |
+    |:-------|:-------------|:------------|:-----|
+    | 🔼 **ON** (Rodret/Tradfri) · **1 dot** (Somrig) | Turn on | Apply default brightness | Increase brightness |
+    | 🔽 **OFF** (Rodret/Tradfri) · **2 dots** (Somrig) | Turn off | Apply default brightness | Decrease brightness (down to 1%) |
 
     ---
 
@@ -33,6 +33,13 @@ blueprint:
     - 🧩 **Integration:** Zigbee2MQTT (`integration: mqtt`)
     - 💬 Not compatible with ZHA
     - Supports **RODRET** (E2201), **SOMRIG** (E2213), and **TRADFRI ON/OFF** (E1743)
+
+    ---
+
+    ### 🔄 Double Press Notes
+    - **SOMRIG:** Native double press support via Zigbee2MQTT
+    - **RODRET / TRADFRI:** Virtual double press via timing detection — enable
+      **Expose double press** and configure the **Double press delay**
 
     ---
 
@@ -76,30 +83,96 @@ blueprint:
           filter:
             domain: light
           multiple: false
-    brightness_section:
-      name: Brightness
-      icon: mdi:lightbulb-on-50
+    default_values_section:
+      name: 🎯 Default values
+      icon: mdi:tune-variant
       collapsed: true
       input:
-        helper_force_brightness:
-          name: Force brightness on turn on
-          description: >
-            When enabled, the light will always turn on at the configured
-            **Brightness** value instead of its previous level.
-          default: false
-          selector:
-            boolean: {}
         helper_brightness:
           name: Brightness
           description: >
-            Target brightness when turning on. Requires **Force brightness**
-            to be enabled.
+            Default brightness applied by **double press ON/OFF**.
           default: 50
           selector:
             number:
               unit_of_measurement: "%"
               min: 1.0
               max: 100.0
+              step: 1.0
+              mode: slider
+    options_section:
+      name: ⏱️ Double press & timing
+      icon: mdi:remote
+      collapsed: true
+      input:
+        on_double_press_exposed:
+          name: Expose double press ON
+          description: >
+            Enable virtual **double press** detection for the **ON** button.
+            Only needed for Rodret/Tradfri — SOMRIG has native double press.
+            Double pressing applies the configured default brightness.
+            Adds a small delay to single press detection.
+          default: false
+          selector:
+            boolean: {}
+        off_double_press_exposed:
+          name: Expose double press OFF
+          description: >
+            Enable virtual **double press** detection for the **OFF** button.
+            Only needed for Rodret/Tradfri — SOMRIG has native double press.
+            Double pressing applies the configured default brightness.
+            Adds a small delay to single press detection.
+          default: false
+          selector:
+            boolean: {}
+        helper_last_controller_event:
+          name: Last controller event helper
+          description: >
+            An `input_text` helper used to store the last button event for
+            double press detection. Create an `input_text` helper in Home Assistant
+            and select it here. Each automation instance needs its own helper.
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: input_text
+              multiple: false
+        helper_double_press_delay:
+          name: Double press delay
+          description: >
+            Maximum time between first and second press for double press detection.
+            Increase if double press is not detected reliably.
+          default: 500
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_hold_delay:
+          name: Hold delay
+          description: >
+            Time between repeated actions while a button is held down.
+            Lower values give faster response, higher values give more control.
+          default: 250
+          selector:
+            number:
+              unit_of_measurement: milliseconds
+              min: 100.0
+              max: 5000.0
+              step: 10.0
+              mode: slider
+        helper_max_loops:
+          name: Max hold loops
+          description: >
+            Maximum number of action repetitions while holding a button.
+            Prevents infinite loops if button release is not detected.
+          default: 20
+          selector:
+            number:
+              min: 1.0
+              max: 1000.0
               step: 1.0
               mode: slider
 mode: restart
@@ -138,6 +211,14 @@ triggers:
     id: press-dots2-z2m-e2213
   - trigger: mqtt
     topic: "+/+/+/action"
+    payload: 1_double_press
+    id: double-press-dots1-z2m-e2213
+  - trigger: mqtt
+    topic: "+/+/+/action"
+    payload: 2_double_press
+    id: double-press-dots2-z2m-e2213
+  - trigger: mqtt
+    topic: "+/+/+/action"
     payload: 1_long_press
     id: hold-dots1-z2m-e2213
   - trigger: mqtt
@@ -153,22 +234,32 @@ triggers:
     payload: 2_long_release
     id: release-hold-dots2-z2m-e2213
 variables:
-  helper_force_brightness: !input helper_force_brightness
-  helper_hold_delay: 0.25
+  helper_hold_delay: !input helper_hold_delay
   helper_hold_dim_step: 4
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
+  on_double_press_exposed: !input on_double_press_exposed
+  off_double_press_exposed: !input off_double_press_exposed
   remote_devices: !input remote_devices
   remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
+  trigger_action: "{{ trigger.payload | string }}"
+  helper_last_controller_event: !input helper_last_controller_event
+  helper_double_press_delay: !input helper_double_press_delay
+  last_stored: "{{ states(helper_last_controller_event) if (helper_last_controller_event is string and helper_last_controller_event | length > 0 and has_value(helper_last_controller_event)) else '' }}"
+  last_action: "{{ (last_stored | string).split('|')[0] if '|' in (last_stored | string) else '' }}"
+  last_topic: "{{ (last_stored | string).split('|')[1] if ((last_stored | string).split('|') | length) >= 3 else '' }}"
+  last_timestamp: "{{ ((last_stored | string).split('|')[-1]) | float(0) }}"
+  time_delta: "{{ as_timestamp(now()) - last_timestamp }}"
 condition:
   - condition: template
     value_template: >-
       {{
-        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt)
+        (trigger.topic.split('/')[2] in remote_devices_names if is_mqtt else false)
       }}
 actions:
   - choose:
+      # --- ON button ---
       - conditions:
           - condition: trigger
             id:
@@ -176,28 +267,150 @@ actions:
               - press-dots1-z2m-e2213
         sequence:
           - choose:
-              - conditions: "{{ helper_force_brightness }}"
+              # RODRET/TRADFRI: EPMatt double press pattern
+              - conditions:
+                  - condition: trigger
+                    id:
+                      - press-on-z2m-e1743-e2201
                 sequence:
-                  - action: light.turn_on
-                    target:
-                      entity_id: !input light
-                    data:
-                      brightness_pct: !input helper_brightness
+                  - choose:
+                      # Double press detected
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ on_double_press_exposed and (trigger_action | string) == (last_action | string) and mqtt_topic == last_topic and time_delta < (helper_double_press_delay / 1000) }}"
+                        sequence:
+                          # Clear helper to prevent triple-press
+                          - if:
+                              - condition: template
+                                value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                            then:
+                              - action: input_text.set_value
+                                target:
+                                  entity_id: !input helper_last_controller_event
+                                data:
+                                  value: ""
+                          # Double press ON: apply standard brightness
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                    default:
+                      # Store current event
+                      - if:
+                          - condition: template
+                            value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                        then:
+                          - action: input_text.set_value
+                            target:
+                              entity_id: !input helper_last_controller_event
+                            data:
+                              value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
+                      # Delay (killed by restart on second press)
+                      - if:
+                          - condition: template
+                            value_template: "{{ on_double_press_exposed }}"
+                        then:
+                          - delay:
+                              milliseconds: !input helper_double_press_delay
+                      # Single press ON
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data: {}
+            # SOMRIG: no virtual double press needed, direct execution
             default:
               - action: light.turn_on
                 target:
                   entity_id: !input light
                 data: {}
+      # --- OFF button ---
       - conditions:
           - condition: trigger
             id:
               - press-off-z2m-e1743-e2201
               - press-dots2-z2m-e2213
         sequence:
-          - action: light.turn_off
+          - choose:
+              # RODRET/TRADFRI: EPMatt double press pattern
+              - conditions:
+                  - condition: trigger
+                    id:
+                      - press-off-z2m-e1743-e2201
+                sequence:
+                  - choose:
+                      # Double press detected
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ off_double_press_exposed and (trigger_action | string) == (last_action | string) and mqtt_topic == last_topic and time_delta < (helper_double_press_delay / 1000) }}"
+                        sequence:
+                          # Clear helper to prevent triple-press
+                          - if:
+                              - condition: template
+                                value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                            then:
+                              - action: input_text.set_value
+                                target:
+                                  entity_id: !input helper_last_controller_event
+                                data:
+                                  value: ""
+                          # Double press OFF: apply standard brightness
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                    default:
+                      # Store current event
+                      - if:
+                          - condition: template
+                            value_template: "{{ helper_last_controller_event is string and helper_last_controller_event | length > 0 }}"
+                        then:
+                          - action: input_text.set_value
+                            target:
+                              entity_id: !input helper_last_controller_event
+                            data:
+                              value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
+                      # Delay (killed by restart on second press)
+                      - if:
+                          - condition: template
+                            value_template: "{{ off_double_press_exposed }}"
+                        then:
+                          - delay:
+                              milliseconds: !input helper_double_press_delay
+                      # Single press OFF
+                      - action: light.turn_off
+                        target:
+                          entity_id: !input light
+                        data: {}
+            # SOMRIG: direct execution
+            default:
+              - action: light.turn_off
+                target:
+                  entity_id: !input light
+                data: {}
+      # --- SOMRIG native double press ---
+      - conditions:
+          - condition: trigger
+            id:
+              - double-press-dots1-z2m-e2213
+        sequence:
+          - action: light.turn_on
             target:
               entity_id: !input light
-            data: {}
+            data:
+              brightness_pct: !input helper_brightness
+      - conditions:
+          - condition: trigger
+            id:
+              - double-press-dots2-z2m-e2213
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: !input light
+            data:
+              brightness_pct: !input helper_brightness
+      # --- Hold ON ---
       - conditions:
           - condition: trigger
             id:
@@ -205,20 +418,40 @@ actions:
               - hold-dots1-z2m-e2213
         sequence:
           - repeat:
-              while:
-                - condition: trigger
-                  id:
-                    - hold-on-z2m-e1743-e2201
-                    - hold-dots1-z2m-e2213
+              count: !input helper_max_loops
               sequence:
                 - parallel:
-                    - action: light.turn_on
-                      target:
-                        entity_id: !input light
-                      data:
-                        brightness_step_pct: "{{ helper_hold_dim_step }}"
-                        transition: "{{ helper_hold_delay }}"
-                    - delay: "{{ helper_hold_delay }}"
+                    - sequence:
+                        - action: light.turn_on
+                          target:
+                            entity_id: !input light
+                          data:
+                            brightness_step_pct: "{{ helper_hold_dim_step }}"
+                            transition: "{{ helper_hold_delay / 1000 }}"
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-on-z2m-e1743-e2201
+                                    - hold-dots1-z2m-e2213
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "1_long_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
+      # --- Hold OFF ---
       - conditions:
           - condition: trigger
             id:
@@ -226,22 +459,45 @@ actions:
               - hold-dots2-z2m-e2213
         sequence:
           - variables:
-              brightness_pct: "{{ iif(is_state(light, 'on'), state_attr(light, 'brightness'), 0) * 100 / 255 }}"
+              brightness_pct: "{{ iif(is_state(light, 'on'), state_attr(light, 'brightness') | int(0), 0) * 100 / 255 }}"
               total_iterations_to_zero: "{{ (brightness_pct / helper_hold_dim_step) | round(0, 'ceil') }}"
           - repeat:
-              count: "{{ total_iterations_to_zero - 1 }}"
+              count: "{{ [total_iterations_to_zero - 1, 0] | max }}"
               sequence:
                 - parallel:
-                    - action: light.turn_on
-                      target:
-                        entity_id: !input light
-                      data:
-                        brightness_step_pct: "{{ helper_hold_dim_step | int * -1 }}"
-                        transition: "{{ helper_hold_delay }}"
-                    - delay: "{{ helper_hold_delay }}"
+                    - sequence:
+                        - action: light.turn_on
+                          target:
+                            entity_id: !input light
+                          data:
+                            brightness_step_pct: "{{ helper_hold_dim_step | int * -1 }}"
+                            transition: "{{ helper_hold_delay / 1000 }}"
+                    - sequence:
+                        - choose:
+                            - conditions:
+                                - condition: trigger
+                                  id:
+                                    - hold-off-z2m-e1743-e2201
+                                    - hold-dots2-z2m-e2213
+                              sequence:
+                                - wait_for_trigger:
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "brightness_stop"
+                                    - trigger: mqtt
+                                      topic: "{{ mqtt_topic }}"
+                                      payload: "2_long_release"
+                                  timeout:
+                                    milliseconds: !input helper_hold_delay
+                                  continue_on_timeout: true
+                                - if:
+                                    - condition: template
+                                      value_template: "{{ wait.trigger.idx is defined }}"
+                                  then:
+                                    - stop: button released
           - action: light.turn_on
             target:
               entity_id: !input light
             data:
               brightness_pct: 1
-              transition: "{{ helper_hold_delay }}"
+              transition: "{{ helper_hold_delay / 1000 }}"
