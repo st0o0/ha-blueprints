@@ -337,7 +337,8 @@ variables:
   last_stored: "{{ states(helper_last_controller_event) if (helper_last_controller_event is string and helper_last_controller_event | length > 0 and has_value(helper_last_controller_event)) else '' }}"
   last_action: "{{ (last_stored | string).split('|')[0] if '|' in (last_stored | string) else '' }}"
   last_topic: "{{ (last_stored | string).split('|')[1] if ((last_stored | string).split('|') | length) >= 3 else '' }}"
-  last_timestamp: "{{ ((last_stored | string).split('|')[-1]) | float(0) }}"
+  last_timestamp: "{{ ((last_stored | string).split('|')[2]) | float(0) if ((last_stored | string).split('|') | length) >= 3 else 0 }}"
+  last_color_mode: "{{ (last_stored | string).split('|')[3] if ((last_stored | string).split('|') | length) >= 4 else '' }}"
   time_delta: "{{ as_timestamp(now()) - last_timestamp }}"
 condition:
   - condition: template
@@ -400,7 +401,7 @@ actions:
                     target:
                       entity_id: !input helper_last_controller_event
                     data:
-                      value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
+                      value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) ~ '|' ~ color_mode }}"
               # Single press ON
               - action: light.turn_on
                 target:
@@ -433,7 +434,7 @@ actions:
                       # Switching from temperature → RGB
                       - conditions:
                           - condition: template
-                            value_template: "{{ color_mode == 'temperature' }}"
+                            value_template: "{{ last_color_mode == 'temperature' }}"
                         sequence:
                           - choose:
                               - conditions:
@@ -485,7 +486,7 @@ actions:
                     target:
                       entity_id: !input helper_last_controller_event
                     data:
-                      value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
+                      value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) ~ '|' ~ color_mode }}"
               # Single press OFF
               - action: light.turn_off
                 target:
