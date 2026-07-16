@@ -111,7 +111,7 @@ blueprint:
             Enable virtual **double press** detection for the **ON** button.
             Only needed for Rodret/Tradfri — SOMRIG has native double press.
             Double pressing applies the configured default brightness.
-            Adds a small delay to single press detection.
+            Single press still fires immediately — no delay.
           default: false
           selector:
             boolean: {}
@@ -121,7 +121,7 @@ blueprint:
             Enable virtual **double press** detection for the **OFF** button.
             Only needed for Rodret/Tradfri — SOMRIG has native double press.
             Double pressing applies the configured default brightness.
-            Adds a small delay to single press detection.
+            Single press still fires immediately — no delay.
           default: false
           selector:
             boolean: {}
@@ -138,11 +138,11 @@ blueprint:
                 domain: input_text
               multiple: false
         helper_double_press_delay:
-          name: Double press delay
+          name: Double press time window
           description: >
             Maximum time between first and second press for double press detection.
             Increase if double press is not detected reliably.
-          default: 500
+          default: 1000
           selector:
             number:
               unit_of_measurement: milliseconds
@@ -306,13 +306,6 @@ actions:
                               entity_id: !input helper_last_controller_event
                             data:
                               value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
-                      # Delay (killed by restart on second press)
-                      - if:
-                          - condition: template
-                            value_template: "{{ on_double_press_exposed }}"
-                        then:
-                          - delay:
-                              milliseconds: !input helper_double_press_delay
                       # Single press ON
                       - action: light.turn_on
                         target:
@@ -371,13 +364,6 @@ actions:
                               entity_id: !input helper_last_controller_event
                             data:
                               value: "{{ (trigger.payload | string) ~ '|' ~ trigger.topic ~ '|' ~ (as_timestamp(now()) | string) }}"
-                      # Delay (killed by restart on second press)
-                      - if:
-                          - condition: template
-                            value_template: "{{ off_double_press_exposed }}"
-                        then:
-                          - delay:
-                              milliseconds: !input helper_double_press_delay
                       # Single press OFF
                       - action: light.turn_off
                         target:
