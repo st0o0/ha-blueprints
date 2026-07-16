@@ -15,9 +15,9 @@ blueprint:
     ### 🧠 Features
     - 💡 Turn lights **on/off**
     - 🔆 Adjust **brightness** (tap or hold)
-    - 🌡️ Change **color temperature** (left = warmer 🔥, right = cooler ❄️) or **RGB hue** 🌈
-    - ⏩ **Double press ON** to apply default values (brightness + temperature or brightness + RGB)
-    - 🔄 **Color mode switch** via double press OFF — toggles arrow buttons between Temperature and RGB
+    - 🌡️ **Three color modes:** Temperature only, RGB only, or both (switchable)
+    - ⏩ **Double press ON** to apply default values (brightness + color)
+    - 🔄 **Double press OFF** to toggle between Temperature and RGB (when both modes active)
     - 📱 Supports **multiple remotes** controlling the same light
 
     ---
@@ -41,10 +41,10 @@ blueprint:
     ---
 
     ### 🔄 Double Press
-    Enable **Expose double press ON** and adjust the **Double press delay**
-    if needed. Enable **Color mode switch** to allow double press OFF
-    to toggle between Temperature and RGB mode.
-    Increase the delay if double press is not detected reliably.
+    Enable **Expose double press ON** to apply default values.
+    Set color mode to **Temperature + RGB** to enable double press OFF
+    for mode switching. Increase the **Double press time window** if
+    double press is not detected reliably (STYRBAR: use 1000ms+).
 
     ---
 
@@ -80,21 +80,37 @@ blueprint:
       collapsed: true
       input:
         helper_color_mode:
-          name: Default color mode
+          name: Color mode
           description: >
-            Controls what the **left/right arrow buttons** adjust.
-            **Temperature** adjusts warm/cool white (Kelvin),
-            **RGB** cycles through hue colors.
-            If you only need temperature mode, leave this at the default
-            and disable **Enable color mode switch**.
+            **Temperature only** — arrows adjust warm/cool white (Kelvin).
+            **RGB only** — arrows cycle through hue colors.
+            **Temperature + RGB** — both modes, switchable via double press OFF.
           default: temperature
           selector:
             select:
               options:
-                - label: "Color Temperature (Kelvin)"
+                - label: "Temperature only"
                   value: temperature
-                - label: "RGB Color (Hue)"
+                - label: "RGB only"
                   value: rgb
+                - label: "Temperature + RGB (switchable)"
+                  value: both
+              mode: dropdown
+        helper_mode_switch_effect:
+          name: Mode switch effect
+          description: >
+            What happens to the light when switching modes via double press OFF.
+            Only relevant when color mode is **Temperature + RGB**.
+            **Apply defaults** sets brightness and color.
+            **Color only** changes only the color, keeping current brightness.
+          default: apply_defaults
+          selector:
+            select:
+              options:
+                - label: "Apply defaults (brightness + color)"
+                  value: apply_defaults
+                - label: "Color only (keep brightness)"
+                  value: color_only
               mode: dropdown
     default_values_section:
       name: 🎯 Default values
@@ -117,8 +133,9 @@ blueprint:
         helper_temperature:
           name: Color temperature
           description: >
-            Default color temperature applied by **double press ON**
+            Default color temperature. Used by **double press ON**
             in Temperature mode and when switching to Temperature mode.
+            Not used when color mode is **RGB only**.
           default: 2700
           selector:
             number:
@@ -130,8 +147,9 @@ blueprint:
         helper_default_hue:
           name: Hue
           description: >
-            Default hue value (0–360) applied by **double press ON**
+            Default hue (0–360). Used by **double press ON**
             in RGB mode and when switching to RGB mode.
+            Not used when color mode is **Temperature only**.
           default: 30
           selector:
             number:
@@ -144,8 +162,7 @@ blueprint:
           name: Saturation
           description: >
             Color saturation for RGB mode (100 = fully saturated).
-            Applied by **double press ON** in RGB mode
-            and when switching to RGB mode.
+            Not used when color mode is **Temperature only**.
           default: 100
           selector:
             number:
@@ -163,7 +180,7 @@ blueprint:
           name: Temperature step size
           description: >
             How much the color temperature changes per arrow press or hold step.
-            Smaller values give smoother transitions, larger values faster changes.
+            Not used when color mode is **RGB only**.
           default: 300
           selector:
             number:
@@ -175,8 +192,8 @@ blueprint:
         helper_hue_step:
           name: Hue step size
           description: >
-            How many degrees (0–360) the hue shifts per arrow press or hold step.
-            Smaller values give smoother transitions, larger values more dramatic jumps.
+            How many degrees the hue shifts per arrow press or hold step.
+            Not used when color mode is **Temperature only**.
           default: 30
           selector:
             number:
@@ -199,46 +216,6 @@ blueprint:
           default: false
           selector:
             boolean: {}
-        helper_enable_mode_switch:
-          name: Enable color mode switch
-          description: >
-            Enable **double press OFF** to toggle between Temperature and RGB mode.
-            When disabled, arrow buttons always use the **Default color mode**
-            and double press OFF is inactive.
-            Requires a **Color mode helper** (`input_select`) to track the current mode.
-          default: false
-          selector:
-            boolean: {}
-        helper_color_mode_entity:
-          name: Color mode helper
-          description: >
-            An `input_select` helper for **runtime color mode switching**.
-            Only needed when **Enable color mode switch** is active.
-            Create an `input_select` helper with options `temperature` and `rgb`.
-            The initial option determines the starting mode.
-          default: []
-          selector:
-            entity:
-              filter:
-                domain: input_select
-              multiple: false
-        helper_mode_switch_effect:
-          name: Mode switch effect
-          description: >
-            What happens to the light when switching color modes
-            via **double press OFF**.
-            Only relevant when **Enable color mode switch** is active.
-            **Apply defaults** sets brightness and color to the configured defaults.
-            **Color only** changes only the color, keeping the current brightness.
-          default: apply_defaults
-          selector:
-            select:
-              options:
-                - label: "Apply defaults (brightness + color)"
-                  value: apply_defaults
-                - label: "Color only (keep brightness)"
-                  value: color_only
-              mode: dropdown
         helper_last_controller_event:
           name: Last controller event helper
           description: >
@@ -340,9 +317,8 @@ triggers:
     id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
   helper_color_mode: !input helper_color_mode
-  helper_color_mode_entity: !input helper_color_mode_entity
   helper_mode_switch_effect: !input helper_mode_switch_effect
-  color_mode: "{{ states(helper_color_mode_entity) if (helper_color_mode_entity is string and helper_color_mode_entity | length > 0 and has_value(helper_color_mode_entity)) else helper_color_mode }}"
+  color_mode: "{{ ('rgb' if (state_attr(light, 'color_mode') | default('color_temp')) != 'color_temp' else 'temperature') if helper_color_mode == 'both' else helper_color_mode }}"
   helper_default_hue: !input helper_default_hue
   helper_hold_delay: !input helper_hold_delay
   helper_hold_dim_step: 4
@@ -353,7 +329,6 @@ variables:
   light: !input light
   mqtt_topic: "{{ trigger.topic }}"
   on_double_press_exposed: !input on_double_press_exposed
-  helper_enable_mode_switch: !input helper_enable_mode_switch
   remote_devices: !input remote_devices
   remote_devices_names: "{{ remote_devices | map('device_attr', 'name') | map('regex_replace', find='^.*/', replace='', ignorecase=False) | list }}"
   trigger_action: "{{ trigger.payload | string }}"
@@ -441,7 +416,7 @@ actions:
               # Double press detected
               - conditions:
                   - condition: template
-                    value_template: "{{ helper_enable_mode_switch and (trigger_action | string) == (last_action | string) and mqtt_topic == last_topic and time_delta < (helper_double_press_delay / 1000) }}"
+                    value_template: "{{ helper_color_mode == 'both' and (trigger_action | string) == (last_action | string) and mqtt_topic == last_topic and time_delta < (helper_double_press_delay / 1000) }}"
                 sequence:
                   # Clear helper to prevent triple-press
                   - if:
@@ -453,16 +428,6 @@ actions:
                           entity_id: !input helper_last_controller_event
                         data:
                           value: ""
-                  # Toggle color mode helper
-                  - if:
-                      - condition: template
-                        value_template: "{{ helper_color_mode_entity is string and helper_color_mode_entity | length > 0 }}"
-                    then:
-                      - action: input_select.select_option
-                        target:
-                          entity_id: !input helper_color_mode_entity
-                        data:
-                          option: "{{ 'rgb' if color_mode == 'temperature' else 'temperature' }}"
                   # Apply mode switch effect
                   - choose:
                       # Switching from temperature → RGB
