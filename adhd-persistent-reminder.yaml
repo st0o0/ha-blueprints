@@ -1,0 +1,125 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: "ADHD-Friendly Persistent Reminder \U0001F514"
+  description: |
+    ## 🧠 ADHD-Friendly Persistent Reminder for Home Assistant
+
+    A smart notification system that **fights notification blindness** through
+    randomized timing and **won't stop until you confirm the task is done**.
+
+    Designed for recurring daily tasks that are easy to forget — especially
+    for people with ADHD, but useful for anyone.
+
+    ---
+
+    ### ✨ Features
+    - 🎲 **Randomized notification times** — prevents predictability and notification blindness
+    - 🔁 **Variable snooze intervals** — no two reminders feel the same
+    - ✅ **Persistent until confirmed** — tap "Done ✓" to dismiss, or it keeps coming back
+    - 🎯 **Built-in presets** — Toothbrushing, Medication, Trash, Plants, or fully custom
+    - ⏰ **Up to 4 time windows** — morning, noon, evening, night — you decide
+    - 🚨 **Optional escalation** — switch to critical alerts or custom actions after repeated ignoring
+
+    ---
+
+    ### 📱 How It Works
+
+    | Step | What Happens |
+    |:-----|:-------------|
+    | ⏰ **Time window starts** | A random delay (0–15 min) fires before the first notification |
+    | 🔔 **Notification sent** | Actionable notification with a "Done ✓" button appears |
+    | 😴 **Ignored?** | After a random snooze (4–6 min), another notification fires |
+    | 🔁 **Repeat** | Keeps going until you tap "Done ✓" or max reminders is reached |
+    | 🚨 **Still ignoring?** | Optional escalation to critical notification or custom action |
+
+    ---
+
+    ### ⚙️ Requirements
+    - 📱 **Home Assistant Mobile App** (for actionable notifications)
+    - 🏠 **Home Assistant 2024.10.0+**
+
+    ---
+
+    ### 🎯 Presets
+
+    | Preset | Default Title | Default Time |
+    |:-------|:-------------|:-------------|
+    | 🪥 Toothbrushing | Time to brush your teeth! | 07:00 |
+    | 💊 Medication | Time to take your medication! | 08:00 |
+    | 🗑️ Take out trash | Don't forget to take out the trash! | 19:00 |
+    | 🌱 Water plants | Your plants need watering! | 09:00 |
+    | ⚙️ Custom | (you configure everything) | 12:00 |
+
+    ---
+
+    ✨ Created by **st0o0**
+
+  input:
+    preset:
+      name: 🎯 Preset
+      description: >
+        Choose a preset for common tasks. This sets sensible defaults for
+        notification text, icon, and timing. You can override any value below.
+        Select **Custom** to configure everything yourself.
+      default: custom
+      selector:
+        select:
+          options:
+            - label: "🪥 Toothbrushing"
+              value: toothbrushing
+            - label: "💊 Medication"
+              value: medication
+            - label: "🗑️ Take out trash"
+              value: trash
+            - label: "🌱 Water plants"
+              value: plants
+            - label: "⚙️ Custom"
+              value: custom
+
+    notification_section:
+      name: 🔔 Notification settings
+      icon: mdi:bell-ring
+      collapsed: true
+      input:
+        notify_service:
+          name: Notify service
+          description: >
+            The notification service to use (e.g. `notify.mobile_app_your_phone`).
+            Find yours in **Developer Tools → Services** → search for `notify.mobile_app`.
+          default: ""
+          selector:
+            text: {}
+        notification_title:
+          name: Notification title
+          description: >
+            Title shown on the notification. Leave empty to use the preset default.
+          default: ""
+          selector:
+            text: {}
+        notification_message:
+          name: Notification message
+          description: >
+            Message body of the notification. Leave empty to use the preset default.
+          default: ""
+          selector:
+            text: {}
+        notification_icon:
+          name: Notification icon
+          description: >
+            MDI icon shown with the notification (Android only).
+            Leave empty to use the preset default.
+          default: ""
+          selector:
+            icon: {}
+        notification_tag:
+          name: Notification tag
+          description: >
+            Unique tag for clearing notifications. Leave empty to auto-generate
+            from the automation entity ID. Only change if you have multiple
+            instances and need custom tag control.
+          default: ""
+          selector:
+            text: {}
