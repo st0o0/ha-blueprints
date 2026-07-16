@@ -123,3 +123,147 @@ blueprint:
           default: ""
           selector:
             text: {}
+
+    time_window_1_section:
+      name: "⏰ Time window 1"
+      icon: mdi:clock-outline
+      collapsed: false
+      input:
+        window_1_enabled:
+          name: Enable window 1
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: true
+          selector:
+            boolean: {}
+        window_1_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_1_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    time_window_2_section:
+      name: "⏰ Time window 2"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_2_enabled:
+          name: Enable window 2
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: false
+          selector:
+            boolean: {}
+        window_2_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_2_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    time_window_3_section:
+      name: "⏰ Time window 3"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_3_enabled:
+          name: Enable window 3
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: false
+          selector:
+            boolean: {}
+        window_3_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_3_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    time_window_4_section:
+      name: "⏰ Time window 4"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_4_enabled:
+          name: Enable window 4
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: false
+          selector:
+            boolean: {}
+        window_4_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_4_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
