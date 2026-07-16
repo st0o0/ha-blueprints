@@ -6,6 +6,7 @@ on:
     paths:
       - "*.yaml"
       - ".yamllint.yml"
+      - "scripts/**"
 
 jobs:
   yamllint:
@@ -94,3 +95,13 @@ jobs:
           done
 
           exit $exit_code
+
+  jinja2-antipatterns:
+    name: Jinja2 Anti-Patterns
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Jinja2 templates
+        shell: bash
+        run: bash scripts/validate-blueprints.sh
