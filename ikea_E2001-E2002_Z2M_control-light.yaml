@@ -316,6 +316,7 @@ triggers:
     payload: arrow_right_release
     id: release-hold-arrow-right-z2m-e2001-e2002
 variables:
+  light: !input light
   helper_color_mode: !input helper_color_mode
   helper_mode_switch_effect: !input helper_mode_switch_effect
   color_mode: "{{ ('rgb' if (state_attr(light, 'color_mode') | default('color_temp')) != 'color_temp' else 'temperature') if helper_color_mode == 'both' else helper_color_mode }}"
@@ -326,7 +327,6 @@ variables:
   helper_hue_step: !input helper_hue_step
   helper_saturation: !input helper_saturation
   is_mqtt: "{{ trigger.platform == 'mqtt' }}"
-  light: !input light
   mqtt_topic: "{{ trigger.topic }}"
   on_double_press_exposed: !input on_double_press_exposed
   remote_devices: !input remote_devices
