@@ -171,7 +171,7 @@ blueprint:
           name: Brightness step size
           description: >
             How much brightness changes per scroll click.
-          default: 5
+          default: 10
           selector:
             number:
               unit_of_measurement: "%"
@@ -319,7 +319,7 @@ condition:
         (t.old_state.state | string) not in ['unknown', 'unavailable'] and
         (
           is_btn or
-          (is_instant and var_scroll_mode == 'instant' and (t.new_state.state | string) == '1') or
+          (is_instant and var_scroll_mode == 'instant') or
           (is_relaxed and var_scroll_mode == 'relaxed')
         )
       }}
