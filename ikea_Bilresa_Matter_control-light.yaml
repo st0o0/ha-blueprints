@@ -1,0 +1,517 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: "IKEA Bilresa 💡 Light control"
+  description: |
+    ## 💡 IKEA BILRESA – Smart Light Control for Home Assistant
+
+    Control your lights using the **IKEA BILRESA Smart Scroll Wheel** via Matter/Thread.
+    Three scroll zones for brightness, color temperature, and hue — plus buttons for toggling and defaults.
+
+    ---
+
+    ### 🧠 Features
+    - 💡 Turn lights **on/off** with button click
+    - 🔆 Scroll Zone 1: Adjust **brightness**
+    - 🌡️ Scroll Zone 2: Adjust **color temperature** (warm ↔ cool)
+    - 🎨 Scroll Zone 3: Adjust **hue** color
+    - ⏩ **Double click** any button to apply default values
+    - 🔄 **Double click** toggles Temperature ↔ RGB when both modes active
+    - 📡 **Two scroll modes:** Instant (per-click) or Relaxed (per-gesture)
+
+    ---
+
+    ### 🎛️ Scroll Zones & Buttons
+
+    | Zone | Scroll | Button Click | Button Double Click |
+    |:-----|:-------|:-------------|:-------------------|
+    | 🔆 **Zone 1** | Brightness up/down | Toggle on/off | Apply defaults |
+    | 🌡️ **Zone 2** | Color temp warm/cool | Toggle on/off | Apply defaults |
+    | 🎨 **Zone 3** | Hue shift | Toggle on/off | Apply defaults |
+
+    ---
+
+    ### ⚙️ Compatibility
+    - 🧩 **Integration:** Matter (`integration: matter`)
+    - 🔧 **Scroll Mode:** Instant (sensor-based, requires enabling hidden entities) or Relaxed (event-based, works out-of-the-box)
+
+    ---
+
+    ### 📋 Setup Notes
+    - **Instant mode:** Enable the 6 hidden scroll sensor entities in HA (Settings → Devices → Bilresa → Entities → Show disabled)
+    - **Relaxed mode:** Works immediately, no extra setup needed
+
+    ---
+
+    ✨ Created by **st0o0**
+  input:
+    bilresa_device:
+      name: 📱 Bilresa Device
+      description: >
+        The IKEA BILRESA Smart Scroll Wheel paired via Matter/Thread.
+      selector:
+        device:
+          filter:
+            - integration: matter
+              manufacturer: "IKEA of Sweden"
+              model: "BILRESA scroll wheel"
+    light:
+      name: 💡 Light
+      description: The light entity to control with this scroll wheel.
+      selector:
+        entity:
+          filter:
+            domain: light
+          multiple: false
+    scroll_mode_section:
+      name: 📡 Scroll mode
+      icon: mdi:gesture-swipe
+      collapsed: true
+      input:
+        scroll_mode:
+          name: Scroll mode
+          description: >
+            **Instant** — Fires on every scroll click. Requires enabling 6 hidden sensor entities in HA.
+            **Relaxed** — Fires after the scroll gesture completes with total click count. Works out-of-the-box.
+          default: instant
+          selector:
+            select:
+              options:
+                - label: "Instant (sensor-based)"
+                  value: instant
+                - label: "Relaxed (event-based)"
+                  value: relaxed
+              mode: dropdown
+    color_mode_section:
+      name: 🎨 Color mode
+      icon: mdi:palette
+      collapsed: true
+      input:
+        helper_color_mode:
+          name: Color mode
+          description: >
+            **Temperature only** — Zone 2 adjusts warm/cool white, Zone 3 disabled.
+            **RGB only** — Zone 3 cycles through hue colors, Zone 2 disabled.
+            **Temperature + RGB** — Both zones active, double click toggles mode.
+          default: temperature
+          selector:
+            select:
+              options:
+                - label: "Temperature only"
+                  value: temperature
+                - label: "RGB only"
+                  value: rgb
+                - label: "Temperature + RGB (switchable)"
+                  value: both
+              mode: dropdown
+    default_values_section:
+      name: 🎯 Default values
+      icon: mdi:tune-variant
+      collapsed: true
+      input:
+        helper_brightness:
+          name: Brightness
+          description: >
+            Default brightness applied by **double click**.
+          default: 50
+          selector:
+            number:
+              unit_of_measurement: "%"
+              min: 1.0
+              max: 100.0
+              step: 1.0
+              mode: slider
+        helper_temperature:
+          name: Color temperature
+          description: >
+            Default color temperature for double click.
+            Not used when color mode is **RGB only**.
+          default: 2700
+          selector:
+            number:
+              unit_of_measurement: "K"
+              min: 2000
+              max: 6500
+              step: 100
+              mode: slider
+        helper_default_hue:
+          name: Hue
+          description: >
+            Default hue (0–360) for double click.
+            Not used when color mode is **Temperature only**.
+          default: 30
+          selector:
+            number:
+              unit_of_measurement: "°"
+              min: 0
+              max: 360
+              step: 5
+              mode: slider
+        helper_saturation:
+          name: Saturation
+          description: >
+            Color saturation for RGB mode (100 = fully saturated).
+            Not used when color mode is **Temperature only**.
+          default: 100
+          selector:
+            number:
+              unit_of_measurement: "%"
+              min: 10
+              max: 100
+              step: 5
+              mode: slider
+    step_sizes_section:
+      name: 🔧 Step sizes
+      icon: mdi:arrow-left-right
+      collapsed: true
+      input:
+        helper_brightness_step:
+          name: Brightness step size
+          description: >
+            How much brightness changes per scroll click.
+          default: 5
+          selector:
+            number:
+              unit_of_measurement: "%"
+              min: 1
+              max: 25
+              step: 1
+              mode: slider
+        helper_temperature_step:
+          name: Temperature step size
+          description: >
+            How much color temperature changes per scroll click.
+            Not used when color mode is **RGB only**.
+          default: 300
+          selector:
+            number:
+              unit_of_measurement: "K"
+              min: 50
+              max: 700
+              step: 50
+              mode: slider
+        helper_hue_step:
+          name: Hue step size
+          description: >
+            How many degrees the hue shifts per scroll click.
+            Not used when color mode is **Temperature only**.
+          default: 30
+          selector:
+            number:
+              unit_of_measurement: "°"
+              min: 5
+              max: 90
+              step: 5
+              mode: slider
+mode: queued
+max: 10
+max_exceeded: silent
+trigger_variables:
+  var_device_id: !input bilresa_device
+  var_scroll_mode: !input scroll_mode
+  var_sensor_ch1_up: "{{ device_entities(var_device_id) | select('match', '^sensor\\..+_1$') | first | default('') }}"
+  var_sensor_ch1_down: "{{ device_entities(var_device_id) | select('match', '^sensor\\..+_2$') | first | default('') }}"
+  var_sensor_ch2_up: "{{ device_entities(var_device_id) | select('match', '^sensor\\..+_4$') | first | default('') }}"
+  var_sensor_ch2_down: "{{ device_entities(var_device_id) | select('match', '^sensor\\..+_5$') | first | default('') }}"
+  var_sensor_ch3_up: "{{ device_entities(var_device_id) | select('match', '^sensor\\..+_7$') | first | default('') }}"
+  var_sensor_ch3_down: "{{ device_entities(var_device_id) | select('match', '^sensor\\..+_8$') | first | default('') }}"
+  var_event_ch1_up: "{{ device_entities(var_device_id) | select('match', '^event\\..+_1$') | first | default('') }}"
+  var_event_ch1_down: "{{ device_entities(var_device_id) | select('match', '^event\\..+_2$') | first | default('') }}"
+  var_event_ch2_up: "{{ device_entities(var_device_id) | select('match', '^event\\..+_4$') | first | default('') }}"
+  var_event_ch2_down: "{{ device_entities(var_device_id) | select('match', '^event\\..+_5$') | first | default('') }}"
+  var_event_ch3_up: "{{ device_entities(var_device_id) | select('match', '^event\\..+_7$') | first | default('') }}"
+  var_event_ch3_down: "{{ device_entities(var_device_id) | select('match', '^event\\..+_8$') | first | default('') }}"
+  var_btn_ch1: "{{ device_entities(var_device_id) | select('match', '^event\\..+_3$') | first | default('') }}"
+  var_btn_ch2: "{{ device_entities(var_device_id) | select('match', '^event\\..+_6$') | first | default('') }}"
+  var_btn_ch3: "{{ device_entities(var_device_id) | select('match', '^event\\..+_9$') | first | default('') }}"
+triggers:
+  # Instant mode: sensor state changes (hidden entities, must be enabled by user)
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_sensor_ch1_up }}"
+    id: instant-ch1-up
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_sensor_ch1_down }}"
+    id: instant-ch1-down
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_sensor_ch2_up }}"
+    id: instant-ch2-up
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_sensor_ch2_down }}"
+    id: instant-ch2-down
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_sensor_ch3_up }}"
+    id: instant-ch3-up
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_sensor_ch3_down }}"
+    id: instant-ch3-down
+  # Relaxed mode: event entity state changes (work out-of-the-box)
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_event_ch1_up }}"
+    id: relaxed-ch1-up
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_event_ch1_down }}"
+    id: relaxed-ch1-down
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_event_ch2_up }}"
+    id: relaxed-ch2-up
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_event_ch2_down }}"
+    id: relaxed-ch2-down
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_event_ch3_up }}"
+    id: relaxed-ch3-up
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_event_ch3_down }}"
+    id: relaxed-ch3-down
+  # Buttons (always active, both modes)
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_btn_ch1 }}"
+    id: btn-ch1
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_btn_ch2 }}"
+    id: btn-ch2
+  - trigger: event
+    event_type: state_changed
+    event_data:
+      entity_id: "{{ var_btn_ch3 }}"
+    id: btn-ch3
+condition:
+  - condition: template
+    value_template: >-
+      {% set t = trigger.event.data %}
+      {% set is_btn = (trigger.id | string).startswith('btn-') %}
+      {% set is_instant = (trigger.id | string).startswith('instant-') %}
+      {% set is_relaxed = (trigger.id | string).startswith('relaxed-') %}
+      {{
+        t.old_state is not none and
+        t.new_state is not none and
+        (t.new_state.state | string) not in ['unknown', 'unavailable'] and
+        (t.old_state.state | string) not in ['unknown', 'unavailable'] and
+        (
+          is_btn or
+          (is_instant and var_scroll_mode == 'instant' and (t.new_state.state | string) == '1') or
+          (is_relaxed and var_scroll_mode == 'relaxed')
+        )
+      }}
+variables:
+  light: !input light
+  helper_color_mode: !input helper_color_mode
+  color_mode: "{{ ('rgb' if (state_attr(light, 'color_mode') | default('color_temp')) != 'color_temp' else 'temperature') if helper_color_mode == 'both' else helper_color_mode }}"
+  helper_brightness_step: !input helper_brightness_step
+  helper_temperature_step: !input helper_temperature_step
+  helper_hue_step: !input helper_hue_step
+  helper_saturation: !input helper_saturation
+  helper_default_hue: !input helper_default_hue
+  scroll_clicks: >-
+    {% if (trigger.id | string).startswith('instant-') %}
+      1
+    {% else %}
+      {{ trigger.event.data.new_state.attributes.totalNumberOfPressesCounted | default(1) | int(1) }}
+    {% endif %}
+actions:
+  - choose:
+      # --- Scroll CH1: Brightness Up ---
+      - conditions:
+          - condition: trigger
+            id:
+              - instant-ch1-up
+              - relaxed-ch1-up
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: !input light
+            data:
+              brightness_step_pct: "{{ helper_brightness_step * scroll_clicks }}"
+          - delay:
+              milliseconds: 150
+      # --- Scroll CH1: Brightness Down ---
+      - conditions:
+          - condition: trigger
+            id:
+              - instant-ch1-down
+              - relaxed-ch1-down
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: !input light
+            data:
+              brightness_step_pct: "{{ helper_brightness_step * scroll_clicks * -1 }}"
+          - delay:
+              milliseconds: 150
+      # --- Scroll CH2: Color Temp Up (cooler) ---
+      - conditions:
+          - condition: trigger
+            id:
+              - instant-ch2-up
+              - relaxed-ch2-up
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ color_mode != 'rgb' }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int(2700) + helper_temperature_step * scroll_clicks, 6500] | min }}"
+              - delay:
+                  milliseconds: 150
+      # --- Scroll CH2: Color Temp Down (warmer) ---
+      - conditions:
+          - condition: trigger
+            id:
+              - instant-ch2-down
+              - relaxed-ch2-down
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ color_mode != 'rgb' }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int(2700) - helper_temperature_step * scroll_clicks, 2000] | max }}"
+              - delay:
+                  milliseconds: 150
+      # --- Scroll CH3: Hue Up ---
+      - conditions:
+          - condition: trigger
+            id:
+              - instant-ch3-up
+              - relaxed-ch3-up
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ color_mode != 'temperature' }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  hs_color:
+                    - "{{ (((state_attr(light, 'hs_color') or [0,0])[0] | float(0) + helper_hue_step * scroll_clicks) % 360) }}"
+                    - "{{ helper_saturation }}"
+              - delay:
+                  milliseconds: 150
+      # --- Scroll CH3: Hue Down ---
+      - conditions:
+          - condition: trigger
+            id:
+              - instant-ch3-down
+              - relaxed-ch3-down
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ color_mode != 'temperature' }}"
+            then:
+              - action: light.turn_on
+                target:
+                  entity_id: !input light
+                data:
+                  hs_color:
+                    - "{{ (((state_attr(light, 'hs_color') or [0,0])[0] | float(0) - helper_hue_step * scroll_clicks) % 360) }}"
+                    - "{{ helper_saturation }}"
+              - delay:
+                  milliseconds: 150
+      # --- Buttons: All channels (identical behavior) ---
+      - conditions:
+          - condition: trigger
+            id:
+              - btn-ch1
+              - btn-ch2
+              - btn-ch3
+        sequence:
+          - variables:
+              btn_event_type: "{{ trigger.event.data.new_state.attributes.event_type | default('') }}"
+          - choose:
+              # Single click: toggle light
+              - conditions:
+                  - condition: template
+                    value_template: "{{ btn_event_type == 'multi_press_1' }}"
+                sequence:
+                  - action: light.toggle
+                    target:
+                      entity_id: !input light
+                    data: {}
+              # Double click: apply defaults or toggle mode
+              - conditions:
+                  - condition: template
+                    value_template: "{{ btn_event_type == 'multi_press_2' }}"
+                sequence:
+                  - choose:
+                      # "both" mode + currently temperature → switch to RGB
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ helper_color_mode == 'both' and color_mode == 'temperature' }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                              hs_color:
+                                - "{{ helper_default_hue }}"
+                                - "{{ helper_saturation }}"
+                      # "both" mode + currently RGB → switch to temperature
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ helper_color_mode == 'both' and color_mode == 'rgb' }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                              color_temp_kelvin: !input helper_temperature
+                      # RGB mode → apply RGB defaults
+                      - conditions:
+                          - condition: template
+                            value_template: "{{ color_mode == 'rgb' }}"
+                        sequence:
+                          - action: light.turn_on
+                            target:
+                              entity_id: !input light
+                            data:
+                              brightness_pct: !input helper_brightness
+                              hs_color:
+                                - "{{ helper_default_hue }}"
+                                - "{{ helper_saturation }}"
+                    # Temperature mode (default) → apply temp defaults
+                    default:
+                      - action: light.turn_on
+                        target:
+                          entity_id: !input light
+                        data:
+                          brightness_pct: !input helper_brightness
+                          color_temp_kelvin: !input helper_temperature
