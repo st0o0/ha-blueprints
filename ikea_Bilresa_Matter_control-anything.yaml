@@ -206,8 +206,7 @@ blueprint:
               max: 1000.0
               step: 1.0
               mode: slider
-mode: queued
-max: 10
+mode: single
 max_exceeded: silent
 trigger_variables:
   var_device_id: !input bilresa_device
@@ -345,7 +344,7 @@ actions:
           - choose: []
             default: !input ch1_scroll_up_action
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       - conditions:
           - condition: trigger
             id:
@@ -355,7 +354,7 @@ actions:
           - choose: []
             default: !input ch1_scroll_down_action
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       - conditions:
           - condition: trigger
             id:
@@ -365,7 +364,7 @@ actions:
           - choose: []
             default: !input ch2_scroll_up_action
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       - conditions:
           - condition: trigger
             id:
@@ -375,7 +374,7 @@ actions:
           - choose: []
             default: !input ch2_scroll_down_action
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       - conditions:
           - condition: trigger
             id:
@@ -385,7 +384,7 @@ actions:
           - choose: []
             default: !input ch3_scroll_up_action
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       - conditions:
           - condition: trigger
             id:
@@ -395,7 +394,7 @@ actions:
           - choose: []
             default: !input ch3_scroll_down_action
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       # --- Button CH1 ---
       - conditions:
           - condition: trigger

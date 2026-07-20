@@ -205,8 +205,7 @@ blueprint:
               max: 90
               step: 5
               mode: slider
-mode: queued
-max: 10
+mode: single
 max_exceeded: silent
 trigger_variables:
   var_device_id: !input bilresa_device
@@ -353,7 +352,7 @@ actions:
             data:
               brightness_step_pct: "{{ helper_brightness_step * scroll_clicks }}"
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       # --- Scroll CH1: Brightness Down ---
       - conditions:
           - condition: trigger
@@ -367,7 +366,7 @@ actions:
             data:
               brightness_step_pct: "{{ helper_brightness_step * scroll_clicks * -1 }}"
           - delay:
-              milliseconds: 150
+              milliseconds: 50
       # --- Scroll CH2: Color Temp Up (cooler) ---
       - conditions:
           - condition: trigger
@@ -385,7 +384,7 @@ actions:
                 data:
                   color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int(2700) + helper_temperature_step * scroll_clicks, 6500] | min }}"
               - delay:
-                  milliseconds: 150
+                  milliseconds: 50
       # --- Scroll CH2: Color Temp Down (warmer) ---
       - conditions:
           - condition: trigger
@@ -403,7 +402,7 @@ actions:
                 data:
                   color_temp_kelvin: "{{ [state_attr(light, 'color_temp_kelvin') | int(2700) - helper_temperature_step * scroll_clicks, 2000] | max }}"
               - delay:
-                  milliseconds: 150
+                  milliseconds: 50
       # --- Scroll CH3: Hue Up ---
       - conditions:
           - condition: trigger
@@ -423,7 +422,7 @@ actions:
                     - "{{ (((state_attr(light, 'hs_color') or [0,0])[0] | float(0) + helper_hue_step * scroll_clicks) % 360) }}"
                     - "{{ helper_saturation }}"
               - delay:
-                  milliseconds: 150
+                  milliseconds: 50
       # --- Scroll CH3: Hue Down ---
       - conditions:
           - condition: trigger
@@ -443,7 +442,7 @@ actions:
                     - "{{ (((state_attr(light, 'hs_color') or [0,0])[0] | float(0) - helper_hue_step * scroll_clicks) % 360) }}"
                     - "{{ helper_saturation }}"
               - delay:
-                  milliseconds: 150
+                  milliseconds: 50
       # --- Buttons: All channels (identical behavior) ---
       - conditions:
           - condition: trigger
