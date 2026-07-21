@@ -1,0 +1,170 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: 📱 Mobile Notification with Actions
+  description: |
+    ## 📱 Mobile Notification with Actions
+
+    Send **actionable push notifications** to one or more mobile devices.
+    Configure any trigger, message, and up to **2 optional action buttons**
+    with freely assignable Home Assistant actions.
+
+    ---
+
+    ### 🧠 Features
+    - 🎯 **Any trigger** — State, Time, Event, Template, ...
+    - 📱 **Multiple devices** — notify all selected mobile devices
+    - 🔘 **Up to 2 action buttons** — each optional, with custom HA action
+    - ⏱️ **Configurable timeout** — notification expires automatically
+
+    ---
+
+    ### ⚙️ Requirements
+    - 📲 **Home Assistant Companion App** on iOS or Android
+    - 🔔 Device must be registered as `notify.mobile_app_*`
+
+    ---
+
+    ✨ Created by **st0o0**
+  input:
+    trigger_config:
+      name: 🎯 Trigger
+      description: >
+        The trigger for the notification. Choose any trigger type
+        (State, Time, Event, Template, etc.).
+      selector:
+        trigger: {}
+    notify_devices:
+      name: 📱 Mobile devices
+      description: >
+        One or more mobile devices to send the notification to.
+        Devices must be registered via the Companion App.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+          multiple: true
+    notification_title:
+      name: 📝 Title
+      description: >
+        Notification title. Supports templates.
+      default: ""
+      selector:
+        text: {}
+    notification_message:
+      name: 💬 Message
+      description: >
+        Notification body. Supports templates.
+      default: ""
+      selector:
+        text:
+          multiline: true
+    timeout_minutes:
+      name: ⏱️ Timeout
+      description: >
+        How many minutes until the notification expires.
+        After timeout, no action will be executed.
+      default: 30
+      selector:
+        number:
+          min: 1
+          max: 1440
+          step: 1
+          unit_of_measurement: minutes
+          mode: slider
+    button_section:
+      name: 🔘 Action buttons
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        button_1_label:
+          name: Button 1 — Label
+          description: >
+            Text on the first action button. Leave empty to hide the button.
+          default: ""
+          selector:
+            text: {}
+        button_1_action:
+          name: Button 1 — Action
+          description: >
+            Action to execute when button 1 is tapped.
+          default: []
+          selector:
+            action: {}
+        button_2_label:
+          name: Button 2 — Label
+          description: >
+            Text on the second action button. Leave empty to hide the button.
+          default: ""
+          selector:
+            text: {}
+        button_2_action:
+          name: Button 2 — Action
+          description: >
+            Action to execute when button 2 is tapped.
+          default: []
+          selector:
+            action: {}
+mode: parallel
+max_exceeded: silent
+triggers: !input trigger_config
+variables:
+  button_1_label: !input button_1_label
+  button_2_label: !input button_2_label
+  has_button_1: "{{ button_1_label | default('', true) | length > 0 }}"
+  has_button_2: "{{ button_2_label | default('', true) | length > 0 }}"
+  action_tag: "{{ context.id }}"
+  action_1: "{{ action_tag ~ '_BUTTON_1' }}"
+  action_2: "{{ action_tag ~ '_BUTTON_2' }}"
+  timeout_minutes: !input timeout_minutes
+  notify_devices: !input notify_devices
+  actions_list: >-
+    {% set ns = namespace(actions=[]) %}
+    {% if has_button_1 %}
+      {% set ns.actions = ns.actions + [{"action": action_1, "title": button_1_label}] %}
+    {% endif %}
+    {% if has_button_2 %}
+      {% set ns.actions = ns.actions + [{"action": action_2, "title": button_2_label}] %}
+    {% endif %}
+    {{ ns.actions }}
+actions:
+  - parallel:
+      - repeat:
+          for_each: "{{ notify_devices }}"
+          sequence:
+            - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify(separator='_') }}"
+              data:
+                title: !input notification_title
+                message: !input notification_message
+                data:
+                  actions: "{{ actions_list }}"
+                  tag: "{{ action_tag }}"
+  - if:
+      - condition: template
+        value_template: "{{ has_button_1 or has_button_2 }}"
+    then:
+      - wait_for_trigger:
+          - trigger: event
+            event_type: mobile_app_notification_action
+            event_data:
+              action: "{{ action_1 }}"
+            id: button_1
+          - trigger: event
+            event_type: mobile_app_notification_action
+            event_data:
+              action: "{{ action_2 }}"
+            id: button_2
+        timeout:
+          minutes: "{{ timeout_minutes | int(30) }}"
+        continue_on_timeout: true
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_1' }}"
+            sequence: !input button_1_action
+          - conditions:
+              - condition: template
+                value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_2' }}"
+            sequence: !input button_2_action
