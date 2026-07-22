@@ -66,10 +66,11 @@ blueprint:
       description: >
         How many minutes until the notification expires.
         After timeout, no action will be executed.
-      default: 30
+        Set to 0 to disable the timeout (wait indefinitely).
+      default: 0
       selector:
         number:
-          min: 1
+          min: 0
           max: 1440
           step: 1
           unit_of_measurement: minutes
@@ -158,8 +159,8 @@ actions:
               action: "{{ action_2 }}"
             id: button_2
         timeout:
-          minutes: "{{ timeout_minutes | int(30) }}"
-        continue_on_timeout: true
+          minutes: "{{ timeout_minutes | int(0) }}"
+        continue_on_timeout: "{{ timeout_minutes | int(0) > 0 }}"
       - choose:
           - conditions:
               - condition: template
