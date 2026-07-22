@@ -18,7 +18,18 @@ jobs:
       - name: Install yq
         uses: mikefarah/yq@v4
 
+      - name: Get changed YAML files
+        id: changed
+        shell: bash
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          files=$(git diff --name-only --diff-filter=ACMR origin/${{ github.base_ref }}...HEAD -- '*.yaml')
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$files" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Generate comment body
+        if: steps.changed.outputs.files != ''
         id: comment
         shell: bash
         run: |
@@ -33,7 +44,7 @@ jobs:
           echo "| Blueprint | Import | Source |" >> "$body_file"
           echo "|:----------|:------:|:------:|" >> "$body_file"
 
-          for file in *.yaml; do
+          while IFS= read -r file; do
             [ -f "$file" ] || continue
 
             name=$(yq eval '.blueprint.name // ""' "$file")
@@ -44,7 +55,7 @@ jobs:
             import_url="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=${encoded_url}"
 
             echo "| **${name}** | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](${import_url}) | [YAML](${raw_url}) |" >> "$body_file"
-          done
+          done <<< "${{ steps.changed.outputs.files }}"
 
           echo "" >> "$body_file"
           echo "> ⚠️ Links point to the **PR branch** (\`${branch}\`), not \`main\`." >> "$body_file"
@@ -58,6 +69,7 @@ jobs:
           rm -f "$body_file"
 
       - name: Find existing comment
+        if: steps.changed.outputs.files != ''
         uses: peter-evans/find-comment@v3
         id: find
         with:
@@ -66,6 +78,7 @@ jobs:
           body-includes: "## 🏠 Blueprint Import Links"
 
       - name: Create or update comment
+        if: steps.changed.outputs.files != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
