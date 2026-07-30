@@ -1,0 +1,403 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: 🌩️ ha-njord Weather Alert Notifier
+  description: |
+    ## 🌩️ Universal Weather Alert Notifier for ha-njord
+
+    Turns `ha-njord` weather alert lifecycle events into actionable, non-spammy
+    mobile notifications — one updating notification per active alert instead
+    of a flood of separate pushes.
+
+    ---
+
+    ### 🧠 Features
+    - 📡 Monitors one or more `event.*_weather_alert` entities (multi-location)
+    - 🚦 Severity-gated notifications (`yellow` / `orange` / `red`)
+    - 🔄 One notification per `{location}_{alert_type}` — updates in place through
+      `started` → `escalated` → `deescalated` → `cleared`
+    - 🔔 Independent thresholds for: notify-at-all, high-priority channel, and
+      voice announcement
+    - 📱 "Details" button (opens your dashboard) and "Snooze" button
+      (mutes that specific alert for a configurable duration)
+    - 💾 Snooze state stored in a single `input_text` helper — no JSON, just a
+      simple `key=timestamp` list (same convention as this repo's other
+      blueprints)
+
+    ---
+
+    ### ⚙️ Requirements
+    - 🧩 **Integration:** `ha-njord`
+    - 📲 Home Assistant Companion App (for actionable notifications)
+    - 💾 An `input_text` helper (only if you enable Snooze) — create one under
+      **Settings → Devices & Services → Helpers → Text**. A single helper can
+      be shared across every alert type/location this automation instance
+      manages.
+
+    ---
+
+    ✨ Created by **st0o0**
+
+  input:
+    alert_events:
+      name: 📡 Weather Alert Events
+      description: >
+        One or more `ha-njord` "Weather Alert" event entities to monitor
+        (e.g. `event.home_weather_alert`).
+      selector:
+        entity:
+          filter:
+            domain: event
+            integration: njord
+          multiple: true
+
+    notify_target:
+      name: 📱 Notify service
+      description: >
+        The notification service/target to send alerts to
+        (e.g. `notify.mobile_app_your_phone`).
+      selector:
+        text: {}
+
+    severity_section:
+      name: 🚦 Severity thresholds
+      icon: mdi:alert-decagram
+      collapsed: false
+      input:
+        min_severity:
+          name: Minimum severity to notify
+          description: >
+            Notify on `started`/`escalated` only when severity is at or above
+            this level.
+          default: yellow
+          selector:
+            select:
+              options:
+                - label: "🟡 Yellow"
+                  value: yellow
+                - label: "🟠 Orange"
+                  value: orange
+                - label: "🔴 Red"
+                  value: red
+        critical_severity_for_notification:
+          name: Severity for high-priority channel
+          description: >
+            At or above this severity, the notification is sent through a
+            high-priority/critical channel instead of a normal one.
+          default: red
+          selector:
+            select:
+              options:
+                - label: "🟡 Yellow"
+                  value: yellow
+                - label: "🟠 Orange"
+                  value: orange
+                - label: "🔴 Red"
+                  value: red
+        critical_severity_for_tts:
+          name: Severity for voice announcement
+          description: >
+            At or above this severity, an additional TTS announcement is
+            triggered (requires TTS section below to be configured).
+          default: red
+          selector:
+            select:
+              options:
+                - label: "🟡 Yellow"
+                  value: yellow
+                - label: "🟠 Orange"
+                  value: orange
+                - label: "🔴 Red"
+                  value: red
+
+    lifecycle_section:
+      name: 🔄 Lifecycle notifications
+      icon: mdi:progress-clock
+      collapsed: true
+      input:
+        notify_on_deescalated:
+          name: Notify on de-escalation
+          description: Send a notification when an alert weakens (e.g. red → yellow).
+          default: false
+          selector:
+            boolean: {}
+        notify_on_cleared:
+          name: Notify on cleared
+          description: Send a notification when an alert ends.
+          default: false
+          selector:
+            boolean: {}
+
+    tts_section:
+      name: 🔊 Voice announcement (optional)
+      icon: mdi:volume-high
+      collapsed: true
+      input:
+        media_player:
+          name: Media player
+          description: Media player to announce critical alerts on. Leave empty to disable TTS.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: media_player
+        tts_entity:
+          name: TTS engine
+          description: The `tts.*` engine entity to use for the announcement.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: tts
+
+    actions_section:
+      name: 🔘 Notification actions
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        dashboard_path:
+          name: Details dashboard path
+          description: >
+            Path opened by the "Details" button (e.g. `/lovelace/weather`).
+            Leave empty to hide the Details button.
+          default: ""
+          selector:
+            text: {}
+        enable_snooze:
+          name: Enable Snooze button
+          description: Show a "Snooze" button that mutes this specific alert for a while.
+          default: true
+          selector:
+            boolean: {}
+        snooze_helper:
+          name: Snooze storage helper
+          description: >
+            An `input_text` helper used to store snoozed alert keys. Required
+            when Snooze is enabled. Can be shared across alert types/locations.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: input_text
+        snooze_hours:
+          name: Snooze duration
+          description: How many hours a snoozed alert stays muted.
+          default: 6
+          selector:
+            number:
+              min: 1
+              max: 72
+              step: 1
+              unit_of_measurement: hours
+              mode: slider
+
+mode: parallel
+max_exceeded: silent
+
+triggers:
+  - trigger: state
+    entity_id: !input alert_events
+    id: alert_event
+
+variables:
+  notify_target: !input notify_target
+  min_severity: !input min_severity
+  critical_severity_for_notification: !input critical_severity_for_notification
+  critical_severity_for_tts: !input critical_severity_for_tts
+  notify_on_deescalated: !input notify_on_deescalated
+  notify_on_cleared: !input notify_on_cleared
+  media_player: !input media_player
+  tts_entity: !input tts_entity
+  dashboard_path: !input dashboard_path
+  enable_snooze: !input enable_snooze
+  snooze_helper: !input snooze_helper
+  snooze_hours: !input snooze_hours
+
+  severity_order:
+    yellow: 1
+    orange: 2
+    red: 3
+
+  alert_type: "{{ trigger.to_state.attributes.type | default('', true) }}"
+  location: "{{ trigger.to_state.attributes.location | default('', true) }}"
+  event_type: "{{ trigger.to_state.attributes.event_type | default('', true) }}"
+  alert_key: "njord_{{ location }}_{{ alert_type }}"
+
+  severity: "{{ trigger.to_state.attributes.severity | default('', true) }}"
+  confidence: "{{ trigger.to_state.attributes.confidence if trigger.to_state.attributes.confidence is defined else none }}"
+  trigger_value: "{{ trigger.to_state.attributes.trigger_value if trigger.to_state.attributes.trigger_value is defined else none }}"
+  threshold: "{{ trigger.to_state.attributes.threshold if trigger.to_state.attributes.threshold is defined else none }}"
+  duration_hours: "{{ trigger.to_state.attributes.duration_hours if trigger.to_state.attributes.duration_hours is defined else none }}"
+  hours_until: "{{ trigger.to_state.attributes.hours_until if trigger.to_state.attributes.hours_until is defined else none }}"
+  previous_severity: "{{ trigger.to_state.attributes.previous_severity | default('', true) }}"
+
+  severity_rank: "{{ severity_order.get(severity, 0) }}"
+  min_severity_rank: "{{ severity_order.get(min_severity, 1) }}"
+  critical_notification_rank: "{{ severity_order.get(critical_severity_for_notification, 3) }}"
+  critical_tts_rank: "{{ severity_order.get(critical_severity_for_tts, 3) }}"
+
+  now_ts: "{{ as_timestamp(now()) }}"
+  snooze_raw_state: "{{ (states(snooze_helper) | default('', true)) if (enable_snooze and snooze_helper | default('', true) | length > 0) else '' }}"
+  snooze_pairs: >-
+    {% set ns = namespace(list=[]) %}
+    {% for entry in ((snooze_raw_state | string).split(';') if snooze_raw_state | length > 0 else []) %}
+      {% if '=' in entry %}
+        {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.list }}
+  is_snoozed: >-
+    {{ enable_snooze and (snooze_pairs | selectattr('key', 'eq', alert_key) | selectattr('ts', 'gt', now_ts) | list | length > 0) }}
+
+  action_details: "URI"
+  action_snooze: "{{ alert_key | upper }}_SNOOZE_{{ context.id }}"
+
+actions:
+  - choose:
+      # started / escalated
+      - conditions:
+          - condition: template
+            value_template: "{{ event_type in ['started', 'escalated'] }}"
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ severity_rank >= min_severity_rank and not is_snoozed }}"
+            then:
+              - variables:
+                  is_critical_notification: "{{ severity_rank >= critical_notification_rank }}"
+                  is_critical_tts: >-
+                    {{ severity_rank >= critical_tts_rank
+                    and media_player | default('', true) | length > 0
+                    and tts_entity | default('', true) | length > 0 }}
+                  notification_title: >-
+                    {{ '⚠️' if event_type == 'started' else '⬆️' }}
+                    {{ alert_type | replace('_', ' ') | title }} ({{ severity | title }})
+                  notification_message: >-
+                    {%- set parts = [] -%}
+                    {%- if hours_until is not none -%}
+                      {%- set parts = parts + ['in ' ~ hours_until ~ 'h'] -%}
+                    {%- endif -%}
+                    {%- if trigger_value is not none and threshold is not none -%}
+                      {%- set parts = parts + [(trigger_value | string) ~ ' (threshold ' ~ (threshold | string) ~ ')'] -%}
+                    {%- endif -%}
+                    {%- if duration_hours is not none -%}
+                      {%- set parts = parts + ['~' ~ duration_hours ~ 'h duration'] -%}
+                    {%- endif -%}
+                    {%- if confidence is not none -%}
+                      {%- set parts = parts + [(confidence * 100) | round | string ~ '% confidence'] -%}
+                    {%- endif -%}
+                    {{ parts | join(', ') }}
+                  actions_list: >-
+                    {% set ns = namespace(list=[]) %}
+                    {% if dashboard_path | default('', true) | length > 0 %}
+                      {% set ns.list = ns.list + [{'action': action_details, 'title': 'Details', 'uri': dashboard_path}] %}
+                    {% endif %}
+                    {% if enable_snooze and snooze_helper | default('', true) | length > 0 %}
+                      {% set ns.list = ns.list + [{'action': action_snooze, 'title': 'Snooze ' ~ snooze_hours ~ 'h'}] %}
+                    {% endif %}
+                    {{ ns.list }}
+              - action: "{{ notify_target }}"
+                data:
+                  title: "{{ notification_title }}"
+                  message: "{{ notification_message }}"
+                  data: >-
+                    {{ {
+                      'tag': alert_key,
+                      'actions': actions_list,
+                      'channel': ('njord_alert_critical' if is_critical_notification else 'njord_alert'),
+                      'importance': ('high' if is_critical_notification else 'default'),
+                      'priority': ('high' if is_critical_notification else 'default'),
+                    } }}
+              - if:
+                  - condition: template
+                    value_template: "{{ is_critical_tts }}"
+                then:
+                  - action: tts.speak
+                    target:
+                      entity_id: "{{ tts_entity }}"
+                    data:
+                      media_player_entity_id: "{{ media_player }}"
+                      message: "{{ notification_title }}. {{ notification_message }}"
+              - if:
+                  - condition: template
+                    value_template: "{{ enable_snooze and snooze_helper | default('', true) | length > 0 }}"
+                then:
+                  - wait_for_trigger:
+                      - trigger: event
+                        event_type: mobile_app_notification_action
+                        event_data:
+                          action: "{{ action_snooze }}"
+                    timeout:
+                      hours: 12
+                    continue_on_timeout: true
+                  - if:
+                      - condition: template
+                        value_template: "{{ wait.trigger is not none }}"
+                    then:
+                      - variables:
+                          snooze_write_now_ts: "{{ as_timestamp(now()) }}"
+                          snooze_write_raw_state: "{{ states(snooze_helper) | default('', true) }}"
+                          snooze_write_pairs: >-
+                            {% set ns = namespace(list=[]) %}
+                            {% for entry in ((snooze_write_raw_state | string).split(';') if snooze_write_raw_state | length > 0 else []) %}
+                              {% if '=' in entry %}
+                                {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+                              {% endif %}
+                            {% endfor %}
+                            {{ ns.list }}
+                          snooze_write_kept: >-
+                            {% set ns = namespace(list=[]) %}
+                            {% for p in snooze_write_pairs %}
+                              {% if p.ts > snooze_write_now_ts and p.key != alert_key %}
+                                {% set ns.list = ns.list + [p] %}
+                              {% endif %}
+                            {% endfor %}
+                            {% set ns.list = ns.list + [{'key': alert_key, 'ts': snooze_write_now_ts + (snooze_hours | float(6) * 3600)}] %}
+                            {{ ns.list }}
+                          snooze_write_new_state: >-
+                            {% set ns = namespace(parts=[]) %}
+                            {% for p in snooze_write_kept %}
+                              {% set ns.parts = ns.parts + [p.key ~ '=' ~ (p.ts | int)] %}
+                            {% endfor %}
+                            {{ ns.parts | join(';') }}
+                      - action: input_text.set_value
+                        target:
+                          entity_id: "{{ snooze_helper }}"
+                        data:
+                          value: "{{ snooze_write_new_state }}"
+
+      # deescalated
+      - conditions:
+          - condition: template
+            value_template: "{{ event_type == 'deescalated' }}"
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ notify_on_deescalated }}"
+            then:
+              - action: "{{ notify_target }}"
+                data:
+                  title: "↓ {{ alert_type | replace('_', ' ') | title }} weakened"
+                  message: >-
+                    {{ previous_severity | title }} → {{ severity | title }}
+                    {%- if duration_hours is not none %}, ~{{ duration_hours }}h duration{% endif %}
+                  data:
+                    tag: "{{ alert_key }}"
+
+      # cleared
+      - conditions:
+          - condition: template
+            value_template: "{{ event_type == 'cleared' }}"
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ notify_on_cleared }}"
+            then:
+              - action: "{{ notify_target }}"
+                data:
+                  title: "✅ {{ alert_type | replace('_', ' ') | title }} cleared"
+                  message: "Was: {{ previous_severity | title }}"
+                  data:
+                    tag: "{{ alert_key }}"
