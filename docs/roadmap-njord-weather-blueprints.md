@@ -9,17 +9,17 @@ sensors.
 
 | # | Blueprint | Key Entities | Status |
 |---|-----------|--------------|--------|
-| 1 | Laundry Drying Advisor | `sensor.home_laundry_index`, `sensor.home_weather_trend` | Idea |
-| 2 | Rain Warning for Open Windows | `sensor.home_weather_trend` (precip_starts_in_hours), window sensors | Idea |
+| 1 | Laundry Drying Advisor | `sensor.home_laundry_index`, `sensor.home_weather_trend` | Done |
+| 2 | Rain Warning for Open Windows | `sensor.home_weather_trend` (precip_starts_in_hours), window sensors | Done |
 | 3 | Adaptive Heating COP Optimizer | `sensor.home_cop_estimate` (`cop_optimal` attribute) | Idea |
-| 4 | Universal Weather Alert Notifier | `event.home_weather_alert` (all types/severities/lifecycle states) | Idea |
-| 5 | Night Cooling Window Control | `sensor.home_night_cooling` | Idea |
-| 6 | Running/Cycling Weather Window Finder | `sensor.home_running_index`, `sensor.home_cycling_index` | Idea |
-| 7 | UV Protection Reminder | UV alert sensor, presence | Idea |
-| 8 | Irrigation Automation with Frost/Rain Guard | `sensor.home_irrigation_index`, weather alerts, `sensor.home_vpd` | Idea |
-| 9 | Comfort Ventilation Assistant | `sensor.home_ventilation_index`, `sensor.home_dewpoint_comfort` | Idea |
-| 10 | Inversion/Air Quality Ventilation Lock | `binary_sensor.home_inversion` | Idea |
-| 11 | Consensus Reliability Warning | `weather.home_consensus` (`agreement`, `spread`) | Idea |
+| 4 | Universal Weather Alert Notifier | `event.home_weather_alert` (all types/severities/lifecycle states) | Done |
+| 5 | Night Cooling Window Control | `sensor.home_night_cooling` | Done |
+| 6 | Running/Cycling Weather Window Finder | `sensor.home_running_index`, `sensor.home_cycling_index` | Done |
+| 7 | UV Protection Reminder | UV alert sensor, presence | Done |
+| 8 | Irrigation Automation with Frost/Rain Guard | `sensor.home_irrigation_index`, weather alerts, `sensor.home_vpd` | Done |
+| 9 | Comfort Ventilation Assistant | `sensor.home_ventilation_index`, `sensor.home_dewpoint_comfort` | Done |
+| 10 | Inversion/Air Quality Ventilation Lock | `binary_sensor.home_inversion` | Done |
+| 11 | Consensus Reliability Warning | `weather.home_consensus` (`agreement`, `spread`) | Done |
 
 Dropped from earlier brainstorming (superseded or descoped):
 - **Solar-Yield Device Control** — merged into future energy-focused blueprint set, not in this batch.

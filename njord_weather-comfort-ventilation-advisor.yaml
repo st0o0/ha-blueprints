@@ -1,0 +1,272 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: "\U0001F4A8 ha-njord Comfort Ventilation Advisor"
+  description: |
+    ## 💨 Comfort Ventilation Advisor for ha-njord
+
+    Proactive notifications when ventilation would improve indoor comfort —
+    triggered by dewpoint discomfort combined with favorable outdoor
+    ventilation conditions. Powered by `ha-njord`'s ventilation index
+    and dewpoint comfort sensors.
+
+    ---
+
+    ### 🧠 Features
+    - 📊 Monitors `sensor.*_ventilation_index` and `sensor.*_dewpoint_comfort`
+    - 🌡️ Triggers on both sensors — catches rising ventilation potential
+      and worsening indoor comfort
+    - 📋 Categorical comfort check (oppressive / humid / comfortable)
+    - 🔔 Single notification per location — updates in place via stable tag
+    - 💤 Snooze button to mute notifications
+    - 📱 "Details" and "Snooze" action buttons
+
+    ---
+
+    ### ⚙️ Requirements
+    - 🧩 **Integration:** `ha-njord`
+    - 📲 Home Assistant Companion App (for actionable notifications)
+    - 💾 An `input_text` helper (only if you enable Snooze) — create one under
+      **Settings → Devices & Services → Helpers → Text**. Can be shared with
+      other ha-njord blueprints.
+
+    ---
+
+    ✨ Created by **st0o0**
+
+  input:
+    ventilation_sensor:
+      name: "\U0001F4A8 Ventilation Index Sensor"
+      description: >
+        The `ha-njord` ventilation index sensor
+        (e.g. `sensor.home_ventilation_index`).
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            integration: njord
+
+    dewpoint_sensor:
+      name: "\U0001F321 Dewpoint Comfort Sensor"
+      description: >
+        The `ha-njord` dewpoint comfort sensor
+        (e.g. `sensor.home_dewpoint_comfort`).
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            integration: njord
+
+    notify_target:
+      name: "\U0001F4F1 Notify service"
+      description: >
+        The notification service/target to send alerts to
+        (e.g. `notify.mobile_app_your_phone`).
+      selector:
+        text: {}
+
+    threshold_section:
+      name: "\U0001F4CF Thresholds"
+      icon: mdi:tune
+      collapsed: true
+      input:
+        min_ventilation_index:
+          name: Minimum ventilation index
+          description: >
+            Notify only when the ventilation index is at or above this value.
+          default: 60
+          selector:
+            number:
+              min: 0
+              max: 100
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
+        uncomfortable_states:
+          name: Uncomfortable dewpoint states
+          description: >
+            Dewpoint comfort categories that count as uncomfortable.
+          default:
+            - oppressive
+            - humid
+          selector:
+            select:
+              multiple: true
+              options:
+                - label: Oppressive
+                  value: oppressive
+                - label: Humid
+                  value: humid
+                - label: Slightly humid
+                  value: slightly_humid
+
+    actions_section:
+      name: "\U0001F518 Notification actions"
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        dashboard_path:
+          name: Details dashboard path
+          description: >
+            Path opened by the "Details" button (e.g. `/lovelace/weather`).
+            Leave empty to hide the Details button.
+          default: ""
+          selector:
+            text: {}
+        enable_snooze:
+          name: Enable Snooze button
+          description: Show a "Snooze" button that mutes notifications for a while.
+          default: true
+          selector:
+            boolean: {}
+        snooze_helper:
+          name: Snooze storage helper
+          description: >
+            An `input_text` helper used to store snoozed keys. Required
+            when Snooze is enabled. Can be shared with other ha-njord blueprints.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: input_text
+        snooze_hours:
+          name: Snooze duration
+          description: How many hours notifications stay muted after snooze.
+          default: 4
+          selector:
+            number:
+              min: 1
+              max: 24
+              step: 1
+              unit_of_measurement: hours
+              mode: slider
+
+mode: parallel
+max_exceeded: silent
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input ventilation_sensor
+    above: !input min_ventilation_index
+    id: ventilation_rise
+
+  - trigger: state
+    entity_id: !input dewpoint_sensor
+    id: dewpoint_change
+
+variables:
+  ventilation_sensor: !input ventilation_sensor
+  dewpoint_sensor: !input dewpoint_sensor
+  notify_target: !input notify_target
+  min_ventilation_index: !input min_ventilation_index
+  uncomfortable_states: !input uncomfortable_states
+  dashboard_path: !input dashboard_path
+  enable_snooze: !input enable_snooze
+  snooze_helper: !input snooze_helper
+  snooze_hours: !input snooze_hours
+
+  location: >-
+    {{ (ventilation_sensor | string).split('.')[1] | regex_replace('_ventilation_index$', '') }}
+  ventilation_key: "njord_ventilation_{{ location }}"
+
+  current_index: "{{ states(ventilation_sensor) | float(0) }}"
+  comfort_state: "{{ states(dewpoint_sensor) | default('', true) }}"
+  is_uncomfortable: "{{ comfort_state in uncomfortable_states }}"
+  is_above_threshold: "{{ current_index | float(0) >= min_ventilation_index | float(60) }}"
+
+  now_ts: "{{ as_timestamp(now()) }}"
+  snooze_raw_state: "{{ (states(snooze_helper) | default('', true)) if (enable_snooze and snooze_helper | default('', true) | length > 0) else '' }}"
+  snooze_pairs: >-
+    {% set ns = namespace(list=[]) %}
+    {% for entry in ((snooze_raw_state | string).split(';') if snooze_raw_state | length > 0 else []) %}
+      {% if '=' in entry %}
+        {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.list }}
+  is_snoozed: >-
+    {{ enable_snooze and (snooze_pairs | selectattr('key', 'eq', ventilation_key) | selectattr('ts', 'gt', now_ts) | list | length > 0) }}
+
+  action_details: "URI"
+  action_snooze: "{{ ventilation_key | upper }}_SNOOZE_{{ context.id }}"
+
+actions:
+  - if:
+      - condition: template
+        value_template: "{{ is_uncomfortable and is_above_threshold and not is_snoozed }}"
+    then:
+      - variables:
+          notification_title: "💨 Jetzt lüften — Raumklima verbessern"
+          notification_message: >-
+            Taupunktkomfort: {{ comfort_state | replace('_', ' ') | title }},
+            Lüftungsindex {{ current_index | round }}%
+          actions_list: >-
+            {% set ns = namespace(list=[]) %}
+            {% if dashboard_path | default('', true) | length > 0 %}
+              {% set ns.list = ns.list + [{'action': action_details, 'title': 'Details', 'uri': dashboard_path}] %}
+            {% endif %}
+            {% if enable_snooze and snooze_helper | default('', true) | length > 0 %}
+              {% set ns.list = ns.list + [{'action': action_snooze, 'title': 'Snooze ' ~ snooze_hours ~ 'h'}] %}
+            {% endif %}
+            {{ ns.list }}
+      - action: "{{ notify_target }}"
+        data:
+          title: "{{ notification_title }}"
+          message: "{{ notification_message }}"
+          data: >-
+            {{ {
+              'tag': ventilation_key,
+              'actions': actions_list,
+              'channel': 'njord_ventilation',
+              'importance': 'default',
+              'priority': 'default',
+            } }}
+      - if:
+          - condition: template
+            value_template: "{{ enable_snooze and snooze_helper | default('', true) | length > 0 }}"
+        then:
+          - wait_for_trigger:
+              - trigger: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ action_snooze }}"
+            timeout:
+              hours: 12
+            continue_on_timeout: true
+          - if:
+              - condition: template
+                value_template: "{{ wait.trigger is not none }}"
+            then:
+              - variables:
+                  snooze_write_now_ts: "{{ as_timestamp(now()) }}"
+                  snooze_write_raw_state: "{{ states(snooze_helper) | default('', true) }}"
+                  snooze_write_pairs: >-
+                    {% set ns = namespace(list=[]) %}
+                    {% for entry in ((snooze_write_raw_state | string).split(';') if snooze_write_raw_state | length > 0 else []) %}
+                      {% if '=' in entry %}
+                        {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+                      {% endif %}
+                    {% endfor %}
+                    {{ ns.list }}
+                  snooze_write_kept: >-
+                    {% set ns = namespace(list=[]) %}
+                    {% for p in snooze_write_pairs %}
+                      {% if p.ts > snooze_write_now_ts and p.key != ventilation_key %}
+                        {% set ns.list = ns.list + [p] %}
+                      {% endif %}
+                    {% endfor %}
+                    {% set ns.list = ns.list + [{'key': ventilation_key, 'ts': snooze_write_now_ts + (snooze_hours | float(4) * 3600)}] %}
+                    {{ ns.list }}
+                  snooze_write_new_state: >-
+                    {% set ns = namespace(parts=[]) %}
+                    {% for p in snooze_write_kept %}
+                      {% set ns.parts = ns.parts + [p.key ~ '=' ~ (p.ts | int)] %}
+                    {% endfor %}
+                    {{ ns.parts | join(';') }}
+              - action: input_text.set_value
+                target:
+                  entity_id: "{{ snooze_helper }}"
+                data:
+                  value: "{{ snooze_write_new_state }}"
