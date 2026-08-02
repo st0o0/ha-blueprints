@@ -226,11 +226,11 @@ variables:
   alert_key: "njord_{{ location }}_{{ alert_type }}"
 
   severity: "{{ trigger.to_state.attributes.severity | default('', true) }}"
-  confidence: "{{ trigger.to_state.attributes.confidence if trigger.to_state.attributes.confidence is defined else none }}"
-  trigger_value: "{{ trigger.to_state.attributes.trigger_value if trigger.to_state.attributes.trigger_value is defined else none }}"
-  threshold: "{{ trigger.to_state.attributes.threshold if trigger.to_state.attributes.threshold is defined else none }}"
-  duration_hours: "{{ trigger.to_state.attributes.duration_hours if trigger.to_state.attributes.duration_hours is defined else none }}"
-  hours_until: "{{ trigger.to_state.attributes.hours_until if trigger.to_state.attributes.hours_until is defined else none }}"
+  confidence: "{{ trigger.to_state.attributes.confidence | default(none, true) }}"
+  trigger_value: "{{ trigger.to_state.attributes.trigger_value | default(none, true) }}"
+  threshold: "{{ trigger.to_state.attributes.threshold | default(none, true) }}"
+  duration_hours: "{{ trigger.to_state.attributes.duration_hours | default(none, true) }}"
+  hours_until: "{{ trigger.to_state.attributes.hours_until | default(none, true) }}"
   previous_severity: "{{ trigger.to_state.attributes.previous_severity | default('', true) }}"
 
   severity_rank: "{{ severity_order.get(severity, 0) }}"
@@ -286,7 +286,7 @@ actions:
                       {%- set parts = parts + ['~' ~ duration_hours ~ 'h duration'] -%}
                     {%- endif -%}
                     {%- if confidence is not none -%}
-                      {%- set parts = parts + [(confidence * 100) | round | string ~ '% confidence'] -%}
+                      {%- set parts = parts + [(confidence | float(0) * 100) | round | string ~ '% confidence'] -%}
                     {%- endif -%}
                     {{ parts | join(', ') }}
                   actions_list: >-

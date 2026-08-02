@@ -237,7 +237,7 @@ actions:
                     UV-Index {{ current_uv | round(1) }} ({{ severity }})
                     {%- if confidence is not none %}, {{ (confidence | float(0) * 100) | round }}% Konfidenz{% endif %}
                     {%- if threshold_attr is not none %} (Schwelle {{ threshold_attr }}){% endif %}
-                     — Sonnencreme nicht vergessen
+                    — Sonnencreme nicht vergessen
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
                     {% if dashboard_path | default('', true) | length > 0 %}
