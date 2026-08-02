@@ -331,7 +331,6 @@ variables:
       {{ trigger.event.data.new_state.attributes.totalNumberOfPressesCounted | default(1) | int(1) }}
     {% endif %}
   btn_entity: "{{ trigger.event.data.entity_id | default('') }}"
-  helper_hold_delay: !input helper_hold_delay
 actions:
   - choose:
       # --- Scroll actions ---
@@ -424,7 +423,7 @@ actions:
                       sequence:
                         - if:
                             - condition: template
-                              value_template: "{{ state_attr(btn_entity, 'event_type') != 'long_press' }}"
+                              value_template: "{{ state_attr(btn_entity, 'event_type') | default('') != 'long_press' }}"
                           then:
                             - stop: "button released"
                         - choose: []
@@ -460,7 +459,7 @@ actions:
                       sequence:
                         - if:
                             - condition: template
-                              value_template: "{{ state_attr(btn_entity, 'event_type') != 'long_press' }}"
+                              value_template: "{{ state_attr(btn_entity, 'event_type') | default('') != 'long_press' }}"
                           then:
                             - stop: "button released"
                         - choose: []
@@ -496,7 +495,7 @@ actions:
                       sequence:
                         - if:
                             - condition: template
-                              value_template: "{{ state_attr(btn_entity, 'event_type') != 'long_press' }}"
+                              value_template: "{{ state_attr(btn_entity, 'event_type') | default('') != 'long_press' }}"
                           then:
                             - stop: "button released"
                         - choose: []
