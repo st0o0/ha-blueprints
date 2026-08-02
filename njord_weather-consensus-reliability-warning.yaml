@@ -204,10 +204,10 @@ actions:
               - variables:
                   agreement_pct: "{{ (agreement | float(1) * 100) | round }}"
                   notification_title: >-
-                    {{ '🔴 Wettermodelle stark uneins' if is_critical else '⚠️ Wettervorhersage unsicher' }}
+                    {{ '🔴 Weather models strongly disagree' if is_critical else '⚠️ Weather forecast unreliable' }}
                   notification_message: >-
-                    {{ agreement_pct }}% Übereinstimmung, ±{{ spread | float(0) | round(1) }}°C Streuung
-                    {{ available_models }} Modelle aktiv, {{ reliable_hours }}h zuverlässig
+                    {{ agreement_pct }}% agreement, ±{{ spread | float(0) | round(1) }}°C spread
+                    {{ available_models }} models active, {{ reliable_hours }}h reliable
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
                     {% if dashboard_path | default('', true) | length > 0 %}
@@ -284,9 +284,9 @@ actions:
         sequence:
           - variables:
               agreement_pct: "{{ (agreement | float(1) * 100) | round }}"
-              notification_title: "✅ Vorhersage wieder zuverlässig"
+              notification_title: "✅ Forecast reliable again"
               notification_message: >-
-                {{ agreement_pct }}% Übereinstimmung, ±{{ spread | float(0) | round(1) }}°C Streuung
+                {{ agreement_pct }}% agreement, ±{{ spread | float(0) | round(1) }}°C spread
           - action: "{{ notify_target }}"
             data:
               title: "{{ notification_title }}"

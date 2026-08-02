@@ -152,10 +152,6 @@ triggers:
     above: !input min_ventilation_index
     id: ventilation_rise
 
-  - trigger: state
-    entity_id: !input dewpoint_sensor
-    id: dewpoint_change
-
 variables:
   ventilation_sensor: !input ventilation_sensor
   dewpoint_sensor: !input dewpoint_sensor
@@ -198,10 +194,10 @@ actions:
         value_template: "{{ is_uncomfortable and is_above_threshold and not is_snoozed }}"
     then:
       - variables:
-          notification_title: "💨 Jetzt lüften — Raumklima verbessern"
+          notification_title: "💨 Ventilate now — improve indoor climate"
           notification_message: >-
-            Taupunktkomfort: {{ comfort_state | replace('_', ' ') | title }},
-            Lüftungsindex {{ current_index | round }}%
+            Dewpoint comfort: {{ comfort_state | replace('_', ' ') | title }},
+            ventilation index {{ current_index | round }}%
           actions_list: >-
             {% set ns = namespace(list=[]) %}
             {% if dashboard_path | default('', true) | length > 0 %}

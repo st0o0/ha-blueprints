@@ -198,10 +198,10 @@ actions:
                 value_template: "{{ in_heating_season and not is_snoozed }}"
             then:
               - variables:
-                  notification_title: "🌫️ Inversionslage — nicht lüften"
+                  notification_title: "🌫️ Temperature inversion — do not ventilate"
                   notification_message: >-
-                    Temperaturinversion erkannt, Schadstoffe stauen sich in Bodennähe.
-                    Fenster geschlossen halten
+                    Temperature inversion detected, pollutants trapped near ground level.
+                    Keep windows closed
                     {%- if hdd_sensor | default('', true) | length > 0 %}, HDD {{ hdd_value | round(1) }}{% endif %}
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
@@ -283,8 +283,8 @@ actions:
             then:
               - action: "{{ notify_target }}"
                 data:
-                  title: "✅ Inversionslage aufgelöst"
-                  message: "Luftqualität verbessert — Lüften wieder möglich"
+                  title: "✅ Inversion cleared"
+                  message: "Air quality improved — ventilation safe again"
                   data: >-
                     {{ {
                       'tag': inversion_key,

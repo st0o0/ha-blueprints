@@ -201,10 +201,10 @@ actions:
         value_template: "{{ indoor_warmer and not is_snoozed }}"
     then:
       - variables:
-          notification_title: "🌙 Nachtauskühlung möglich ({{ current_index | round }}%)"
+          notification_title: "🌙 Night cooling possible ({{ current_index | round }}%)"
           notification_message: >-
-            Innen {{ indoor_temp | round(1) }}°C, außen {{ outdoor_temp | round(1) }}°C
-            — Fenster öffnen zum Kühlen
+            Indoor {{ indoor_temp | round(1) }}°C, outdoor {{ outdoor_temp | round(1) }}°C
+            — open windows to cool down
           actions_list: >-
             {% set ns = namespace(list=[]) %}
             {% if dashboard_path | default('', true) | length > 0 %}

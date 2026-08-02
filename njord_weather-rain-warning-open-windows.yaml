@@ -182,9 +182,9 @@ actions:
         value_template: "{{ has_open_windows and not is_snoozed }}"
     then:
       - variables:
-          notification_title: "🌧️ Regen in ~{{ precip_h | round(1) }}h — Fenster offen!"
+          notification_title: "🌧️ Rain in ~{{ precip_h | round(1) }}h — windows open!"
           notification_message: >-
-            {{ open_windows | length }} Fenster offen: {{ open_windows | join(', ') }}
+            {{ open_windows | length }} windows open: {{ open_windows | join(', ') }}
           actions_list: >-
             {% set ns = namespace(list=[]) %}
             {% if dashboard_path | default('', true) | length > 0 %}

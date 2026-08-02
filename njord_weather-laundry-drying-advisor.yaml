@@ -235,10 +235,10 @@ actions:
                 value_template: "{{ current_index | float(0) >= min_index | float(60) and has_dry_window and not is_snoozed }}"
             then:
               - variables:
-                  notification_title: "👕 Guter Waschtag ({{ current_index | round }}%)"
+                  notification_title: "👕 Good drying day ({{ current_index | round }}%)"
                   notification_message: >-
-                    Trockenindex {{ current_index | round }}%
-                    {%- if precip_h | float(99) < 99 %}, ~{{ precip_h | round }}h trockenes Fenster{% endif %}
+                    Drying index {{ current_index | round }}%
+                    {%- if precip_h | float(99) < 99 %}, ~{{ precip_h | round }}h dry window{% endif %}
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
                     {% if dashboard_path | default('', true) | length > 0 %}
@@ -318,10 +318,10 @@ actions:
                 value_template: "{{ enable_live_trigger and has_dry_window and not is_snoozed }}"
             then:
               - variables:
-                  notification_title: "☀️ Bedingungen jetzt gut ({{ current_index | round }}%)"
+                  notification_title: "☀️ Conditions now favorable ({{ current_index | round }}%)"
                   notification_message: >-
-                    Trockenindex {{ current_index | round }}%
-                    {%- if precip_h | float(99) < 99 %}, ~{{ precip_h | round }}h trockenes Fenster{% endif %}
+                    Drying index {{ current_index | round }}%
+                    {%- if precip_h | float(99) < 99 %}, ~{{ precip_h | round }}h dry window{% endif %}
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
                     {% if dashboard_path | default('', true) | length > 0 %}
@@ -402,9 +402,9 @@ actions:
             then:
               - variables:
                   rain_hours: "{{ state_attr(weather_trend_sensor, 'precip_starts_in_hours') | float(0) | round }}"
-                  notification_title: "🌧️ Regen in {{ rain_hours }}h — Wäsche reinholen"
+                  notification_title: "🌧️ Rain in {{ rain_hours }}h — bring laundry inside"
                   notification_message: >-
-                    Trockenindex {{ current_index | round }}%, Regen erwartet in {{ rain_hours }} Stunden
+                    Drying index {{ current_index | round }}%, rain expected in {{ rain_hours }} hours
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
                     {% if dashboard_path | default('', true) | length > 0 %}

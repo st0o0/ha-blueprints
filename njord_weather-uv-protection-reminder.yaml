@@ -232,12 +232,12 @@ actions:
             then:
               - variables:
                   notification_title: >-
-                    ☀️ UV-Schutz empfohlen (UV {{ current_uv | round(1) }})
+                    ☀️ UV protection recommended (UV {{ current_uv | round(1) }})
                   notification_message: >-
-                    UV-Index {{ current_uv | round(1) }} ({{ severity }})
-                    {%- if confidence is not none %}, {{ (confidence | float(0) * 100) | round }}% Konfidenz{% endif %}
-                    {%- if threshold_attr is not none %} (Schwelle {{ threshold_attr }}){% endif %}
-                    — Sonnencreme nicht vergessen
+                    UV index {{ current_uv | round(1) }} ({{ severity }})
+                    {%- if confidence is not none %}, {{ (confidence | float(0) * 100) | round }}% confidence{% endif %}
+                    {%- if threshold_attr is not none %} (threshold {{ threshold_attr }}){% endif %}
+                    — don't forget sunscreen
                   actions_list: >-
                     {% set ns = namespace(list=[]) %}
                     {% if dashboard_path | default('', true) | length > 0 %}

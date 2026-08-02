@@ -183,7 +183,7 @@ variables:
     {{ 'running' if 'running' in sensor_name else 'cycling' }}
   activity_key: "njord_{{ activity_type }}_{{ location }}"
   activity_emoji: "{{ '🏃' if activity_type == 'running' else '🚴' }}"
-  activity_label: "{{ 'Laufen' if activity_type == 'running' else 'Radfahren' }}"
+  activity_label: "{{ 'Running' if activity_type == 'running' else 'Cycling' }}"
 
   current_index: "{{ states(activity_sensor) | float(0) }}"
   wind_speed_raw: "{{ state_attr(activity_sensor, 'wind_speed') }}"
@@ -219,13 +219,13 @@ actions:
         value_template: "{{ current_index | float(0) >= min_index | float(60) and has_dry_window and not is_snoozed }}"
     then:
       - variables:
-          notification_title: "{{ activity_emoji }} Gutes {{ activity_label }}wetter ({{ current_index | round }}%)"
+          notification_title: "{{ activity_emoji }} Good {{ activity_label | lower }} weather ({{ current_index | round }}%)"
           notification_message: >-
-            {{ activity_label }}index {{ current_index | round }}%
+            {{ activity_label }} index {{ current_index | round }}%
             {%- if temperature is not none %}, {{ temperature }}°C{% endif %}
-            {%- if feels_like is not none %} (gefühlt {{ feels_like }}°C){% endif %}
-            {%- if wind_speed is not none %}, Wind {{ wind_speed }} km/h{% endif %}
-            {%- if precip_h | float(99) < 99 %}, ~{{ precip_h | round }}h trocken{% endif %}
+            {%- if feels_like is not none %} (feels like {{ feels_like }}°C){% endif %}
+            {%- if wind_speed is not none %}, wind {{ wind_speed }} km/h{% endif %}
+            {%- if precip_h | float(99) < 99 %}, ~{{ precip_h | round }}h dry{% endif %}
           actions_list: >-
             {% set ns = namespace(list=[]) %}
             {% if dashboard_path | default('', true) | length > 0 %}

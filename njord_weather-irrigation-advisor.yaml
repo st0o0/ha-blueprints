@@ -229,11 +229,11 @@ actions:
         value_template: "{{ all_guards_ok and not is_snoozed }}"
     then:
       - variables:
-          notification_title: "💧 Guter Bewässerungstag ({{ current_index | round }}%)"
+          notification_title: "💧 Good irrigation day ({{ current_index | round }}%)"
           notification_message: >-
-            Bewässerungsindex {{ current_index | round }}%
+            Irrigation index {{ current_index | round }}%
             {%- if vpd_sensor | default('', true) | length > 0 %}, VPD {{ vpd_value | round(1) }} kPa{% endif %}
-            {%- if alert_event | default('', true) | length > 0 %}, keine Frost-/Regenwarnung aktiv{% endif %}
+            {%- if alert_event | default('', true) | length > 0 %}, no frost/rain warning active{% endif %}
           actions_list: >-
             {% set ns = namespace(list=[]) %}
             {% if dashboard_path | default('', true) | length > 0 %}
