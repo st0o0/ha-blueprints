@@ -124,10 +124,10 @@ variables:
   notify_devices: !input notify_devices
   actions_list: >-
     {% set ns = namespace(actions=[]) %}
-    {% if has_button_1 %}
+    {% if has_button_1 | bool %}
       {% set ns.actions = ns.actions + [{"action": action_1, "title": button_1_label}] %}
     {% endif %}
-    {% if has_button_2 %}
+    {% if has_button_2 | bool %}
       {% set ns.actions = ns.actions + [{"action": action_2, "title": button_2_label}] %}
     {% endif %}
     {{ ns.actions }}
@@ -136,37 +136,37 @@ actions:
       - repeat:
           for_each: "{{ notify_devices }}"
           sequence:
-            - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify(separator='_') }}"
+            - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | default('unknown', true) | slugify(separator='_') }}"
               data:
                 title: !input notification_title
                 message: !input notification_message
                 data:
                   actions: "{{ actions_list }}"
                   tag: "{{ action_tag }}"
-  - if:
-      - condition: template
-        value_template: "{{ has_button_1 or has_button_2 }}"
-    then:
-      - wait_for_trigger:
-          - trigger: event
-            event_type: mobile_app_notification_action
-            event_data:
-              action: "{{ action_1 }}"
-            id: button_1
-          - trigger: event
-            event_type: mobile_app_notification_action
-            event_data:
-              action: "{{ action_2 }}"
-            id: button_2
-        timeout:
-          minutes: "{{ timeout_minutes | int(0) }}"
-        continue_on_timeout: "{{ timeout_minutes | int(0) > 0 }}"
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_1' }}"
-            sequence: !input button_1_action
-          - conditions:
-              - condition: template
-                value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_2' }}"
-            sequence: !input button_2_action
+      - if:
+          - condition: template
+            value_template: "{{ has_button_1 | bool or has_button_2 | bool }}"
+        then:
+          - wait_for_trigger:
+              - trigger: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ action_1 }}"
+                id: button_1
+              - trigger: event
+                event_type: mobile_app_notification_action
+                event_data:
+                  action: "{{ action_2 }}"
+                id: button_2
+            timeout:
+              minutes: "{{ timeout_minutes | int(0) }}"
+            continue_on_timeout: "{{ timeout_minutes | int(0) > 0 }}"
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_1' }}"
+                sequence: !input button_1_action
+              - conditions:
+                  - condition: template
+                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_2' }}"
+                sequence: !input button_2_action
