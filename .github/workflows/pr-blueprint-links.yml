@@ -30,6 +30,8 @@ jobs:
           echo "" >> "$body_file"
           echo "Test these blueprints directly in your Home Assistant instance:" >> "$body_file"
           echo "" >> "$body_file"
+          echo "| Blueprint | Import | Source |" >> "$body_file"
+          echo "|:----------|:------:|:------:|" >> "$body_file"
 
           for file in *.yaml; do
             [ -f "$file" ] || continue
@@ -41,21 +43,11 @@ jobs:
             encoded_url=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$raw_url")
             import_url="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=${encoded_url}"
 
-            echo "### ${name}" >> "$body_file"
-            echo "" >> "$body_file"
-            echo "[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](${import_url})" >> "$body_file"
-            echo "" >> "$body_file"
-            echo "<details><summary>📋 Manual import URL</summary>" >> "$body_file"
-            echo "" >> "$body_file"
-            echo "\`\`\`" >> "$body_file"
-            echo "${raw_url}" >> "$body_file"
-            echo "\`\`\`" >> "$body_file"
-            echo "</details>" >> "$body_file"
-            echo "" >> "$body_file"
+            echo "| **${name}** | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](${import_url}) | [YAML](${raw_url}) |" >> "$body_file"
           done
 
-          echo "---" >> "$body_file"
-          echo "⚠️ These links point to the **PR branch** (\`${branch}\`), not \`main\`." >> "$body_file"
+          echo "" >> "$body_file"
+          echo "> ⚠️ Links point to the **PR branch** (\`${branch}\`), not \`main\`." >> "$body_file"
 
           {
             echo "body<<ENDOFBODY"

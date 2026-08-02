@@ -41,6 +41,8 @@ jobs:
           body=""
 
           body+=$'\n## Blueprints\n\n'
+          body+="| Blueprint | Import |"$'\n'
+          body+="|:----------|:------:|"$'\n'
 
           for file in *.yaml; do
             [ -f "$file" ] || continue
@@ -49,8 +51,7 @@ jobs:
             encoded_url=$(printf '%s' "$url" | jq -sRr @uri)
             import_url="https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=${encoded_url}"
 
-            body+="### ${name}"$'\n\n'
-            body+="[![Open your Home Assistant instance and show the blueprint import dialog with this blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](${import_url})"$'\n\n'
+            body+="| **${name}** | [![Import](https://my.home-assistant.io/badges/blueprint_import.svg)](${import_url}) |"$'\n'
           done
 
           # Write to file to preserve newlines
