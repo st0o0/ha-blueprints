@@ -222,7 +222,7 @@ blueprint:
             An `input_text` helper used to store the last button event for
             double press detection. Create an `input_text` helper in Home Assistant
             and select it here. Each automation instance needs its own helper.
-          default: []
+          default: ""
           selector:
             entity:
               filter:
