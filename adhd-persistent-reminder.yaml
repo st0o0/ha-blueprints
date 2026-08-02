@@ -1,0 +1,513 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: "ADHD-Friendly Persistent Reminder \U0001F514"
+  description: |
+    ## 🧠 ADHD-Friendly Persistent Reminder for Home Assistant
+
+    A smart notification system that **fights notification blindness** through
+    randomized timing and **won't stop until you confirm the task is done**.
+
+    Designed for recurring daily tasks that are easy to forget — especially
+    for people with ADHD, but useful for anyone.
+
+    ---
+
+    ### ✨ Features
+    - 🎲 **Randomized notification times** — prevents predictability and notification blindness
+    - 🔁 **Variable snooze intervals** — no two reminders feel the same
+    - ✅ **Persistent until confirmed** — tap "Done ✓" to dismiss, or it keeps coming back
+    - 🎯 **Built-in presets** — Toothbrushing, Medication, Trash, Plants, or fully custom
+    - ⏰ **Up to 4 time windows** — morning, noon, evening, night — you decide
+    - 🚨 **Optional escalation** — switch to critical alerts or custom actions after repeated ignoring
+
+    ---
+
+    ### 📱 How It Works
+
+    | Step | What Happens |
+    |:-----|:-------------|
+    | ⏰ **Time window starts** | A random delay (0–15 min) fires before the first notification |
+    | 🔔 **Notification sent** | Actionable notification with a "Done ✓" button appears |
+    | 😴 **Ignored?** | After a random snooze (4–6 min), another notification fires |
+    | 🔁 **Repeat** | Keeps going until you tap "Done ✓" or max reminders is reached |
+    | 🚨 **Still ignoring?** | Optional escalation to critical notification or custom action |
+
+    ---
+
+    ### ⚙️ Requirements
+    - 📱 **Home Assistant Mobile App** (for actionable notifications)
+    - 🏠 **Home Assistant 2024.10.0+**
+
+    ---
+
+    ### 🎯 Presets
+
+    | Preset | Default Title | Default Time |
+    |:-------|:-------------|:-------------|
+    | 🪥 Toothbrushing | Time to brush your teeth! | 07:00 |
+    | 💊 Medication | Time to take your medication! | 08:00 |
+    | 🗑️ Take out trash | Don't forget to take out the trash! | 19:00 |
+    | 🌱 Water plants | Your plants need watering! | 09:00 |
+    | ⚙️ Custom | (you configure everything) | 12:00 |
+
+    ---
+
+    ✨ Created by **st0o0**
+
+  input:
+    preset:
+      name: 🎯 Preset
+      description: >
+        Choose a preset for common tasks. This sets sensible defaults for
+        notification text, icon, and timing. You can override any value below.
+        Select **Custom** to configure everything yourself.
+      default: custom
+      selector:
+        select:
+          options:
+            - label: "🪥 Toothbrushing"
+              value: toothbrushing
+            - label: "💊 Medication"
+              value: medication
+            - label: "🗑️ Take out trash"
+              value: trash
+            - label: "🌱 Water plants"
+              value: plants
+            - label: "⚙️ Custom"
+              value: custom
+
+    notification_section:
+      name: 🔔 Notification settings
+      icon: mdi:bell-ring
+      collapsed: true
+      input:
+        notify_service:
+          name: Notify service
+          description: >
+            The notification service to use (e.g. `notify.mobile_app_your_phone`).
+            Find yours in **Developer Tools → Services** → search for `notify.mobile_app`.
+          default: ""
+          selector:
+            text: {}
+        notification_title:
+          name: Notification title
+          description: >
+            Title shown on the notification. Leave empty to use the preset default.
+          default: ""
+          selector:
+            text: {}
+        notification_message:
+          name: Notification message
+          description: >
+            Message body of the notification. Leave empty to use the preset default.
+          default: ""
+          selector:
+            text: {}
+        notification_icon:
+          name: Notification icon
+          description: >
+            MDI icon shown with the notification (Android only).
+            Leave empty to use the preset default.
+          default: ""
+          selector:
+            icon: {}
+        notification_tag:
+          name: Notification tag
+          description: >
+            Unique tag for clearing notifications. Leave empty to auto-generate
+            from the automation entity ID. Only change if you have multiple
+            instances and need custom tag control.
+          default: ""
+          selector:
+            text: {}
+
+    time_window_1_section:
+      name: "⏰ Time window 1"
+      icon: mdi:clock-outline
+      collapsed: false
+      input:
+        window_1_enabled:
+          name: Enable window 1
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: true
+          selector:
+            boolean: {}
+        window_1_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_1_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    time_window_2_section:
+      name: "⏰ Time window 2"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_2_enabled:
+          name: Enable window 2
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: false
+          selector:
+            boolean: {}
+        window_2_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_2_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    time_window_3_section:
+      name: "⏰ Time window 3"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_3_enabled:
+          name: Enable window 3
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: false
+          selector:
+            boolean: {}
+        window_3_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_3_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    time_window_4_section:
+      name: "⏰ Time window 4"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_4_enabled:
+          name: Enable window 4
+          description: >
+            Enable this time window. At least one window should be enabled.
+          default: false
+          selector:
+            boolean: {}
+        window_4_time:
+          name: Trigger time
+          description: >
+            When the reminder sequence starts. A random delay is added
+            before the first notification (see Snooze settings).
+            Leave at default to use the preset time.
+          default: "12:00:00"
+          selector:
+            time: {}
+        window_4_random_delay_max:
+          name: Max random start delay
+          description: >
+            Maximum random delay (in minutes) before the first notification.
+            The actual delay is randomly chosen between 0 and this value.
+            Prevents notification blindness from predictable timing.
+          default: 15
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 0
+              max: 60
+              step: 1
+              mode: slider
+
+    snooze_section:
+      name: "😴 Snooze settings"
+      icon: mdi:timer-sand
+      collapsed: true
+      input:
+        snooze_min:
+          name: Minimum snooze time
+          description: >
+            Minimum time (in minutes) between repeated notifications.
+            The actual snooze is randomly chosen between min and max.
+          default: 4
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 1
+              max: 30
+              step: 1
+              mode: slider
+        snooze_max:
+          name: Maximum snooze time
+          description: >
+            Maximum time (in minutes) between repeated notifications.
+            Varying the interval prevents subconscious anticipation.
+          default: 6
+          selector:
+            number:
+              unit_of_measurement: minutes
+              min: 1
+              max: 60
+              step: 1
+              mode: slider
+        max_reminders:
+          name: Maximum reminders
+          description: >
+            Stop after this many reminders if never confirmed.
+            Set to 0 for unlimited reminders (until confirmed or next window).
+          default: 10
+          selector:
+            number:
+              min: 0
+              max: 50
+              step: 1
+              mode: slider
+
+    escalation_section:
+      name: "🚨 Escalation"
+      icon: mdi:alert-circle
+      collapsed: true
+      input:
+        escalation_enabled:
+          name: Enable escalation
+          description: >
+            When enabled, the notification changes after a number of
+            ignored reminders. It can become a critical alert (bypasses
+            Do Not Disturb) or trigger a custom action.
+          default: false
+          selector:
+            boolean: {}
+        escalation_after:
+          name: Escalate after N reminders
+          description: >
+            Number of ignored reminders before escalation kicks in.
+          default: 3
+          selector:
+            number:
+              min: 1
+              max: 20
+              step: 1
+              mode: slider
+        escalation_custom_action:
+          name: Escalation action
+          description: >
+            Custom action to run when escalation triggers.
+            For example, send a notification to a speaker, notify a partner,
+            or flash a light. Leave empty to use critical notification
+            (bypasses Do Not Disturb on the same device).
+          default: []
+          selector:
+            action: {}
+
+mode: restart
+max_exceeded: silent
+
+triggers:
+  - trigger: time
+    at: !input window_1_time
+    id: window_1
+  - trigger: time
+    at: !input window_2_time
+    id: window_2
+  - trigger: time
+    at: !input window_3_time
+    id: window_3
+  - trigger: time
+    at: !input window_4_time
+    id: window_4
+
+variables:
+  preset: !input preset
+  user_title: !input notification_title
+  user_message: !input notification_message
+  user_icon: !input notification_icon
+  user_tag: !input notification_tag
+  notify_service: !input notify_service
+  snooze_min: !input snooze_min
+  snooze_max: !input snooze_max
+  max_reminders: !input max_reminders
+  escalation_enabled: !input escalation_enabled
+  escalation_after: !input escalation_after
+  escalation_custom_action: !input escalation_custom_action
+  window_1_enabled: !input window_1_enabled
+  window_2_enabled: !input window_2_enabled
+  window_3_enabled: !input window_3_enabled
+  window_4_enabled: !input window_4_enabled
+  window_1_random_delay_max: !input window_1_random_delay_max
+  window_2_random_delay_max: !input window_2_random_delay_max
+  window_3_random_delay_max: !input window_3_random_delay_max
+  window_4_random_delay_max: !input window_4_random_delay_max
+  triggered_window: "{{ trigger.id | default('window_1') }}"
+  window_number: "{{ triggered_window.split('_')[1] | default('1') | int(1) }}"
+  window_enabled: >-
+    {%- if window_number | int(1) == 1 -%}{{ window_1_enabled }}
+    {%- elif window_number | int(1) == 2 -%}{{ window_2_enabled }}
+    {%- elif window_number | int(1) == 3 -%}{{ window_3_enabled }}
+    {%- elif window_number | int(1) == 4 -%}{{ window_4_enabled }}
+    {%- else -%}false{%- endif -%}
+  random_delay_max: >-
+    {%- if window_number | int(1) == 1 -%}{{ window_1_random_delay_max | int(15) }}
+    {%- elif window_number | int(1) == 2 -%}{{ window_2_random_delay_max | int(15) }}
+    {%- elif window_number | int(1) == 3 -%}{{ window_3_random_delay_max | int(15) }}
+    {%- elif window_number | int(1) == 4 -%}{{ window_4_random_delay_max | int(15) }}
+    {%- else -%}15{%- endif -%}
+  preset_titles:
+    toothbrushing: "Time to brush your teeth!"
+    medication: "Time to take your medication!"
+    trash: "Don't forget to take out the trash!"
+    plants: "Your plants need watering!"
+    custom: "Reminder"
+  preset_messages:
+    toothbrushing: "\U0001FAA5 Your teeth won't brush themselves! Tap Done when you're finished."
+    medication: "\U0001F48A Take your medication now. Tap Done when you've taken it."
+    trash: "\U0001F5D1️ The trash needs to go out. Tap Done when it's done."
+    plants: "\U0001F331 Your plants are thirsty! Tap Done after watering."
+    custom: "Don't forget! Tap Done when the task is complete."
+  preset_icons:
+    toothbrushing: "mdi:toothbrush"
+    medication: "mdi:pill"
+    trash: "mdi:trash-can"
+    plants: "mdi:watering-can"
+    custom: "mdi:bell-ring"
+  resolved_title: >-
+    {{ user_title if user_title | default('', true) | length > 0
+    else preset_titles.get(preset, 'Reminder') }}
+  resolved_message: >-
+    {{ user_message if user_message | default('', true) | length > 0
+    else preset_messages.get(preset, 'Tap Done when complete.') }}
+  resolved_icon: >-
+    {{ user_icon if user_icon | default('', true) | length > 0
+    else preset_icons.get(preset, 'mdi:bell-ring') }}
+  resolved_tag: >-
+    {{ user_tag if user_tag | default('', true) | length > 0
+    else 'adhd_reminder_' ~ this.entity_id | default('unknown') ~ '_w' ~ window_number }}
+  action_tag: >-
+    ADHD_DONE_{{ resolved_tag | upper | replace('.', '_') | replace(' ', '_') }}
+
+condition:
+  - condition: template
+    value_template: "{{ window_enabled | bool(false) }}"
+  - condition: template
+    value_template: "{{ notify_service | default('', true) | length > 0 }}"
+
+actions:
+  - delay:
+      minutes: "{{ range(0, random_delay_max | int(15) + 1) | random }}"
+  - variables:
+      reminder_count: 0
+  - repeat:
+      while:
+        - condition: template
+          value_template: "{{ max_reminders | int(10) == 0 or repeat.index <= max_reminders | int(10) }}"
+      sequence:
+        - variables:
+            reminder_count: "{{ repeat.index }}"
+            is_escalated: >-
+              {{ escalation_enabled | bool(false)
+              and reminder_count | int >= escalation_after | int(3) }}
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: "{{ is_escalated }}"
+              sequence:
+                - choose:
+                    - conditions:
+                        - condition: template
+                          value_template: "{{ escalation_custom_action | default([], true) | length > 0 }}"
+                      sequence: !input escalation_custom_action
+                - action: "{{ notify_service }}"
+                  data:
+                    title: "\U0001F6A8 {{ resolved_title }}"
+                    message: "{{ resolved_message }}"
+                    data:
+                      tag: "{{ resolved_tag }}"
+                      persistent: true
+                      sticky: true
+                      channel: "adhd_reminder_critical"
+                      importance: high
+                      priority: high
+                      ttl: 0
+                      icon_url: "{{ resolved_icon }}"
+                      actions:
+                        - action: "{{ action_tag }}"
+                          title: "Done ✓"
+          default:
+            - action: "{{ notify_service }}"
+              data:
+                title: "{{ resolved_title }}"
+                message: "{{ resolved_message }}"
+                data:
+                  tag: "{{ resolved_tag }}"
+                  sticky: true
+                  channel: "adhd_reminder"
+                  icon_url: "{{ resolved_icon }}"
+                  actions:
+                    - action: "{{ action_tag }}"
+                      title: "Done ✓"
+        - wait_for_trigger:
+            - trigger: event
+              event_type: mobile_app_notification_action
+              event_data:
+                action: "{{ action_tag }}"
+          timeout:
+            minutes: "{{ range(snooze_min | int(4), snooze_max | int(6) + 1) | random }}"
+          continue_on_timeout: true
+        - if:
+            - condition: template
+              value_template: "{{ wait.trigger is not none }}"
+          then:
+            - action: "{{ notify_service }}"
+              data:
+                message: clear_notification
+                data:
+                  tag: "{{ resolved_tag }}"
+            - stop: "Task confirmed done"
