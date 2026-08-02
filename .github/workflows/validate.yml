@@ -105,3 +105,32 @@ jobs:
       - name: Validate Jinja2 templates
         shell: bash
         run: bash scripts/validate-blueprints.sh
+
+  snooze-consistency:
+    name: Snooze Block Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check snooze block consistency
+        shell: bash
+        run: bash scripts/check-snooze-consistency.sh
+
+  blueprint-validation:
+    name: Blueprint Validation (Input Refs + Jinja2 Syntax)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build validator image
+        run: >
+          docker build -q
+          -t ha-blueprint-validator
+          -f scripts/Dockerfile.validate
+          scripts/
+
+      - name: Run blueprint validation
+        run: >
+          docker run --rm
+          -v "${{ github.workspace }}:/blueprints:ro"
+          ha-blueprint-validator
