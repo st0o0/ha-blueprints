@@ -229,6 +229,7 @@ variables:
   notification_sticky: !input notification_sticky
   clear_on_action: !input clear_on_action
   max_snooze_count: !input max_snooze_count
+  has_timeout: "{{ timeout_minutes | int(0) > 0 }}"
   actions_list: >-
     {% set ns = namespace(actions=[]) %}
     {% if has_button_1 | bool %}
@@ -277,8 +278,8 @@ actions:
                 action: "{{ action_2 }}"
               id: button_2
           timeout:
-            minutes: "{{ timeout_minutes | int(0) }}"
-          continue_on_timeout: "{{ timeout_minutes | int(0) > 0 }}"
+            minutes: "{{ timeout_minutes | int(0) if has_timeout | bool(false) else 1440 }}"
+          continue_on_timeout: true
         - choose:
             - conditions:
                 - condition: template
