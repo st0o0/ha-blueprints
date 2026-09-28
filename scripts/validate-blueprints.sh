@@ -97,9 +97,9 @@ check_file() {
 }
 
 # Find blueprint files
-files=(ikea_*.yaml)
+files=(ikea_*.yaml njord_*.yaml)
 if [[ ${#files[@]} -eq 0 ]] || [[ ! -f "${files[0]}" ]]; then
-  echo "No blueprint files found (ikea_*.yaml)"
+  echo "No blueprint files found (ikea_*.yaml, njord_*.yaml)"
   exit 0
 fi
 
