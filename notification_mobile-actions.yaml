@@ -210,8 +210,7 @@ blueprint:
               mode: slider
 mode: parallel
 max_exceeded: silent
-triggers:
-  - !input trigger_config
+triggers: !input trigger_config
 variables:
   button_1_label: !input button_1_label
   button_2_label: !input button_2_label
