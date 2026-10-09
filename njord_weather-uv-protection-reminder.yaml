@@ -1,0 +1,362 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: "☀️ ha-njord UV Protection Reminder"
+  description: |
+    ## ☀️ UV Protection Reminder for ha-njord
+
+    Proactive sunscreen reminders and optional automatic shading control
+    when UV levels exceed a configurable threshold — powered by `ha-njord`'s
+    UV alert sensor.
+
+    ---
+
+    ### 🧠 Features
+    - 📊 Monitors `sensor.*_uv_alert` (continuous UV index with severity)
+    - ☀️ Severity-aware notification priority (default vs. critical channel)
+    - 💤 Auto-snooze after first notification — at most one reminder per UV
+      rise per day
+    - 🪟 Optional automatic shading: close covers on high UV, reopen when
+      UV drops
+    - 🔔 Single notification per location — updates in place via stable tag
+    - 📱 "Details" and "Snooze" action buttons
+
+    ---
+
+    ### ⚙️ Requirements
+    - 🧩 **Integration:** `ha-njord`
+    - 📲 Home Assistant Companion App (for actionable notifications)
+    - 💾 An `input_text` helper (only if you enable Snooze) — create one under
+      **Settings → Devices & Services → Helpers → Text**. Can be shared with
+      other ha-njord blueprints.
+
+    ---
+
+    ✨ Created by **st0o0**
+
+  input:
+    uv_sensor:
+      name: "\U0001F4CA UV Alert Sensor"
+      description: >
+        The `ha-njord` UV alert sensor
+        (e.g. `sensor.vreden_uv_alert`).
+      selector:
+        entity:
+          filter:
+            domain: sensor
+            integration: njord
+
+    notify_target:
+      name: "\U0001F4F1 Notify service"
+      description: >
+        The notification service/target to send alerts to
+        (e.g. `notify.mobile_app_your_phone`).
+      selector:
+        text: {}
+
+    threshold_section:
+      name: "\U0001F4CF Thresholds"
+      icon: mdi:tune
+      collapsed: true
+      input:
+        uv_threshold:
+          name: UV index notification threshold
+          description: >
+            Notify when the UV index rises above this value.
+            WHO scale: 3 = moderate, 6 = high, 8 = very high.
+          default: 3
+          selector:
+            number:
+              min: 1
+              max: 11
+              step: 1
+              mode: slider
+        critical_uv_for_priority:
+          name: UV index for high-priority channel
+          description: >
+            At or above this UV index (or severity orange/red), the
+            notification uses a high-priority channel.
+          default: 6
+          selector:
+            number:
+              min: 1
+              max: 11
+              step: 1
+              mode: slider
+
+    shading_section:
+      name: "\U0001FA9F Shading"
+      icon: mdi:blinds-horizontal
+      collapsed: true
+      input:
+        enable_shading:
+          name: Enable automatic shading
+          description: >
+            Automatically close cover entities when UV exceeds the shading
+            threshold and reopen when it drops back below.
+          default: false
+          selector:
+            boolean: {}
+        shading_uv_threshold:
+          name: Shading UV threshold
+          description: >
+            UV index at which covers are closed. Can differ from the
+            notification threshold.
+          default: 5
+          selector:
+            number:
+              min: 1
+              max: 11
+              step: 1
+              mode: slider
+        shading_cover_entities:
+          name: Cover entities
+          description: >
+            Cover entities to close for shading (e.g. blinds, awnings).
+          default: []
+          selector:
+            entity:
+              filter:
+                domain: cover
+              multiple: true
+
+    actions_section:
+      name: "\U0001F518 Notification actions"
+      icon: mdi:gesture-tap-button
+      collapsed: true
+      input:
+        dashboard_path:
+          name: Details dashboard path
+          description: >
+            Path opened by the "Details" button (e.g. `/lovelace/weather`).
+            Leave empty to hide the Details button.
+          default: ""
+          selector:
+            text: {}
+        enable_snooze:
+          name: Enable Snooze button
+          description: Show a "Snooze" button that mutes notifications for a while.
+          default: true
+          selector:
+            boolean: {}
+        snooze_helper:
+          name: Snooze storage helper
+          description: >
+            An `input_text` helper used to store snoozed keys. Required
+            when Snooze is enabled. Can be shared with other ha-njord blueprints.
+          default: ""
+          selector:
+            entity:
+              filter:
+                domain: input_text
+        snooze_hours:
+          name: Snooze duration
+          description: >
+            How many hours notifications stay muted after the first UV
+            reminder (auto-snooze) or after tapping the Snooze button.
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 24
+              step: 1
+              unit_of_measurement: hours
+              mode: slider
+
+mode: parallel
+max_exceeded: silent
+
+triggers:
+  - trigger: numeric_state
+    entity_id: !input uv_sensor
+    above: !input uv_threshold
+    id: uv_rise
+
+  - trigger: numeric_state
+    entity_id: !input uv_sensor
+    below: !input shading_uv_threshold
+    id: uv_fall
+
+variables:
+  uv_sensor: !input uv_sensor
+  notify_target: !input notify_target
+  uv_threshold: !input uv_threshold
+  critical_uv_for_priority: !input critical_uv_for_priority
+  enable_shading: !input enable_shading
+  shading_uv_threshold: !input shading_uv_threshold
+  shading_cover_entities: !input shading_cover_entities
+  dashboard_path: !input dashboard_path
+  enable_snooze: !input enable_snooze
+  snooze_helper: !input snooze_helper
+  snooze_hours: !input snooze_hours
+
+  location: >-
+    {{ (uv_sensor | string).split('.')[1] | regex_replace('_uv_alert$', '') }}
+  uv_key: "njord_uv_{{ location }}"
+
+  current_uv: "{{ states(uv_sensor) | float(0) }}"
+  severity: "{{ state_attr(uv_sensor, 'severity') | default('none', true) }}"
+  confidence: "{{ state_attr(uv_sensor, 'confidence') if state_attr(uv_sensor, 'confidence') is not none else none }}"
+  threshold_attr: "{{ state_attr(uv_sensor, 'threshold') if state_attr(uv_sensor, 'threshold') is not none else none }}"
+
+  is_critical: "{{ severity in ['orange', 'red'] or current_uv | float(0) >= critical_uv_for_priority | float(6) }}"
+
+  now_ts: "{{ as_timestamp(now()) }}"
+  snooze_raw_state: "{{ (states(snooze_helper) | default('', true)) if (enable_snooze and snooze_helper | default('', true) | length > 0) else '' }}"
+  snooze_pairs: >-
+    {% set ns = namespace(list=[]) %}
+    {% for entry in ((snooze_raw_state | string).split(';') if snooze_raw_state | length > 0 else []) %}
+      {% if '=' in entry %}
+        {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+      {% endif %}
+    {% endfor %}
+    {{ ns.list }}
+  is_snoozed: >-
+    {{ enable_snooze and (snooze_pairs | selectattr('key', 'eq', uv_key) | selectattr('ts', 'gt', now_ts) | list | length > 0) }}
+
+  action_details: "URI"
+  action_snooze: "{{ uv_key | upper }}_SNOOZE_{{ context.id }}"
+
+actions:
+  - choose:
+      # UV rise — notify + optional shading + auto-snooze
+      - conditions:
+          - condition: trigger
+            id: uv_rise
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ not is_snoozed }}"
+            then:
+              - variables:
+                  notification_title: >-
+                    ☀️ UV protection recommended (UV {{ current_uv | round(1) }})
+                  notification_message: >-
+                    UV index {{ current_uv | round(1) }} ({{ severity }})
+                    {%- if confidence is not none %}, {{ (confidence | float(0) * 100) | round }}% confidence{% endif %}
+                    {%- if threshold_attr is not none %} (threshold {{ threshold_attr }}){% endif %}
+                    — don't forget sunscreen
+                  actions_list: >-
+                    {% set ns = namespace(list=[]) %}
+                    {% if dashboard_path | default('', true) | length > 0 %}
+                      {% set ns.list = ns.list + [{'action': action_details, 'title': 'Details', 'uri': dashboard_path}] %}
+                    {% endif %}
+                    {% if enable_snooze and snooze_helper | default('', true) | length > 0 %}
+                      {% set ns.list = ns.list + [{'action': action_snooze, 'title': 'Snooze ' ~ snooze_hours ~ 'h'}] %}
+                    {% endif %}
+                    {{ ns.list }}
+              - action: "{{ notify_target }}"
+                data:
+                  title: "{{ notification_title }}"
+                  message: "{{ notification_message }}"
+                  data: >-
+                    {{ {
+                      'tag': uv_key,
+                      'actions': actions_list,
+                      'channel': ('njord_uv_critical' if is_critical else 'njord_uv'),
+                      'importance': ('high' if is_critical else 'default'),
+                      'priority': ('high' if is_critical else 'default'),
+                    } }}
+              # Auto-snooze: write snooze entry immediately after notification
+              - if:
+                  - condition: template
+                    value_template: "{{ enable_snooze and snooze_helper | default('', true) | length > 0 }}"
+                then:
+                  - variables:
+                      auto_snooze_now_ts: "{{ as_timestamp(now()) }}"
+                      auto_snooze_raw_state: "{{ states(snooze_helper) | default('', true) }}"
+                      auto_snooze_pairs: >-
+                        {% set ns = namespace(list=[]) %}
+                        {% for entry in ((auto_snooze_raw_state | string).split(';') if auto_snooze_raw_state | length > 0 else []) %}
+                          {% if '=' in entry %}
+                            {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+                          {% endif %}
+                        {% endfor %}
+                        {{ ns.list }}
+                      auto_snooze_kept: >-
+                        {% set ns = namespace(list=[]) %}
+                        {% for p in auto_snooze_pairs %}
+                          {% if p.ts > auto_snooze_now_ts and p.key != uv_key %}
+                            {% set ns.list = ns.list + [p] %}
+                          {% endif %}
+                        {% endfor %}
+                        {% set ns.list = ns.list + [{'key': uv_key, 'ts': auto_snooze_now_ts + (snooze_hours | float(8) * 3600)}] %}
+                        {{ ns.list }}
+                      auto_snooze_new_state: >-
+                        {% set ns = namespace(parts=[]) %}
+                        {% for p in auto_snooze_kept %}
+                          {% set ns.parts = ns.parts + [p.key ~ '=' ~ (p.ts | int)] %}
+                        {% endfor %}
+                        {{ ns.parts | join(';') }}
+                  - action: input_text.set_value
+                    target:
+                      entity_id: "{{ snooze_helper }}"
+                    data:
+                      value: "{{ auto_snooze_new_state }}"
+                  # Wait for manual snooze extension
+                  - wait_for_trigger:
+                      - trigger: event
+                        event_type: mobile_app_notification_action
+                        event_data:
+                          action: "{{ action_snooze }}"
+                    timeout:
+                      hours: 12
+                    continue_on_timeout: true
+                  - if:
+                      - condition: template
+                        value_template: "{{ wait.trigger is not none }}"
+                    then:
+                      - variables:
+                          snooze_write_now_ts: "{{ as_timestamp(now()) }}"
+                          snooze_write_raw_state: "{{ states(snooze_helper) | default('', true) }}"
+                          snooze_write_pairs: >-
+                            {% set ns = namespace(list=[]) %}
+                            {% for entry in ((snooze_write_raw_state | string).split(';') if snooze_write_raw_state | length > 0 else []) %}
+                              {% if '=' in entry %}
+                                {% set ns.list = ns.list + [{'key': (entry | string).split('=')[0], 'ts': (entry | string).split('=')[1] | float(0)}] %}
+                              {% endif %}
+                            {% endfor %}
+                            {{ ns.list }}
+                          snooze_write_kept: >-
+                            {% set ns = namespace(list=[]) %}
+                            {% for p in snooze_write_pairs %}
+                              {% if p.ts > snooze_write_now_ts and p.key != uv_key %}
+                                {% set ns.list = ns.list + [p] %}
+                              {% endif %}
+                            {% endfor %}
+                            {% set ns.list = ns.list + [{'key': uv_key, 'ts': snooze_write_now_ts + (snooze_hours | float(8) * 3600)}] %}
+                            {{ ns.list }}
+                          snooze_write_new_state: >-
+                            {% set ns = namespace(parts=[]) %}
+                            {% for p in snooze_write_kept %}
+                              {% set ns.parts = ns.parts + [p.key ~ '=' ~ (p.ts | int)] %}
+                            {% endfor %}
+                            {{ ns.parts | join(';') }}
+                      - action: input_text.set_value
+                        target:
+                          entity_id: "{{ snooze_helper }}"
+                        data:
+                          value: "{{ snooze_write_new_state }}"
+          # Shading: close covers on UV rise (independent of snooze)
+          - if:
+              - condition: template
+                value_template: "{{ enable_shading and shading_cover_entities | default([], true) | length > 0 and current_uv | float(0) >= shading_uv_threshold | float(5) }}"
+            then:
+              - action: cover.close_cover
+                target:
+                  entity_id: "{{ shading_cover_entities }}"
+
+      # UV fall — reopen covers (no notification)
+      - conditions:
+          - condition: trigger
+            id: uv_fall
+        sequence:
+          - if:
+              - condition: template
+                value_template: "{{ enable_shading and shading_cover_entities | default([], true) | length > 0 }}"
+            then:
+              - action: cover.open_cover
+                target:
+                  entity_id: "{{ shading_cover_entities }}"

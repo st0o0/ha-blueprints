@@ -3,21 +3,24 @@ blueprint:
     min_version: 2024.10.0
   author: st0o0
   domain: automation
-  name: 📱 Mobile Notification with Actions
+  name: "\U0001F4F1 Mobile Notification with Actions"
   description: |
     ## 📱 Mobile Notification with Actions
 
     Send **actionable push notifications** to one or more mobile devices.
     Configure any trigger, message, and up to **2 optional action buttons**
-    with freely assignable Home Assistant actions.
+    with freely assignable Home Assistant actions or **built-in snooze**.
 
     ---
 
     ### 🧠 Features
     - 🎯 **Any trigger** — State, Time, Event, Template, ...
     - 📱 **Multiple devices** — notify all selected mobile devices
-    - 🔘 **Up to 2 action buttons** — each optional, with custom HA action
+    - 🔘 **Up to 2 action buttons** — each with custom HA action or snooze
+    - ⏰ **Snooze support** — re-send notification after configurable delay
+    - 🔁 **Repeat until confirmed** — keeps notifying until action button is tapped
     - ⏱️ **Configurable timeout** — notification expires automatically
+    - 🧹 **Auto-clear** — dismiss notification on all devices when confirmed
 
     ---
 
@@ -27,17 +30,28 @@ blueprint:
 
     ---
 
+    ### 📖 Example: Dishwasher Finished
+
+    | Setting | Value |
+    |:--------|:------|
+    | Trigger | State: `sensor.dishwasher_programm_beendet` → `present` |
+    | Button 1 | ✅ Done — (any action or empty) |
+    | Button 2 | ⏰ +15 min — **Snooze mode ON**, 15 minutes |
+    | Persistent | ✅ |
+
+    ---
+
     ✨ Created by **st0o0**
   input:
     trigger_config:
-      name: 🎯 Trigger
+      name: "\U0001F3AF Trigger"
       description: >
         The trigger for the notification. Choose any trigger type
         (State, Time, Event, Template, etc.).
       selector:
         trigger: {}
     notify_devices:
-      name: 📱 Mobile devices
+      name: "\U0001F4F1 Mobile devices"
       description: >
         One or more mobile devices to send the notification to.
         Devices must be registered via the Companion App.
@@ -47,14 +61,14 @@ blueprint:
             - integration: mobile_app
           multiple: true
     notification_title:
-      name: 📝 Title
+      name: "\U0001F4DD Title"
       description: >
         Notification title. Supports templates.
       default: ""
       selector:
         text: {}
     notification_message:
-      name: 💬 Message
+      name: "\U0001F4AC Message"
       description: >
         Notification body. Supports templates.
       default: ""
@@ -62,7 +76,7 @@ blueprint:
         text:
           multiline: true
     timeout_minutes:
-      name: ⏱️ Timeout
+      name: "⏱️ Timeout"
       description: >
         How many minutes until the notification expires.
         After timeout, no action will be executed.
@@ -76,45 +90,134 @@ blueprint:
           unit_of_measurement: minutes
           mode: slider
     button_section:
-      name: 🔘 Action buttons
+      name: "\U0001F518 Action buttons"
       icon: mdi:gesture-tap-button
       collapsed: true
       input:
         button_1_label:
-          name: Button 1 — Label
+          name: "Button 1 — Label"
           description: >
             Text on the first action button. Leave empty to hide the button.
           default: ""
           selector:
             text: {}
+        button_1_is_snooze:
+          name: "Button 1 — Snooze mode"
+          description: >
+            When enabled, tapping this button re-sends the notification
+            after the configured snooze delay instead of running an action.
+          default: false
+          selector:
+            boolean: {}
+        button_1_snooze_minutes:
+          name: "Button 1 — Snooze delay"
+          description: >
+            Minutes to wait before re-sending the notification.
+            Only used when snooze mode is enabled for this button.
+          default: 15
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: minutes
+              mode: slider
         button_1_action:
-          name: Button 1 — Action
+          name: "Button 1 — Action"
           description: >
             Action to execute when button 1 is tapped.
+            Ignored when snooze mode is enabled for this button.
           default: []
           selector:
             action: {}
         button_2_label:
-          name: Button 2 — Label
+          name: "Button 2 — Label"
           description: >
             Text on the second action button. Leave empty to hide the button.
           default: ""
           selector:
             text: {}
+        button_2_is_snooze:
+          name: "Button 2 — Snooze mode"
+          description: >
+            When enabled, tapping this button re-sends the notification
+            after the configured snooze delay instead of running an action.
+          default: false
+          selector:
+            boolean: {}
+        button_2_snooze_minutes:
+          name: "Button 2 — Snooze delay"
+          description: >
+            Minutes to wait before re-sending the notification.
+            Only used when snooze mode is enabled for this button.
+          default: 15
+          selector:
+            number:
+              min: 1
+              max: 120
+              step: 1
+              unit_of_measurement: minutes
+              mode: slider
         button_2_action:
-          name: Button 2 — Action
+          name: "Button 2 — Action"
           description: >
             Action to execute when button 2 is tapped.
+            Ignored when snooze mode is enabled for this button.
           default: []
           selector:
             action: {}
+    behavior_section:
+      name: "\U0001F527 Notification behavior"
+      icon: mdi:cog
+      collapsed: true
+      input:
+        notification_persistent:
+          name: Persistent notification
+          description: >
+            When enabled, the notification cannot be swiped away (Android).
+            Useful for important reminders that require explicit confirmation.
+          default: false
+          selector:
+            boolean: {}
+        notification_sticky:
+          name: Sticky notification
+          description: >
+            When enabled, the notification is not dismissed when tapped
+            (Android). The user must use an action button to dismiss it.
+          default: false
+          selector:
+            boolean: {}
+        clear_on_action:
+          name: Clear notification on action
+          description: >
+            Automatically dismiss the notification on all devices
+            when a non-snooze action button is tapped.
+          default: true
+          selector:
+            boolean: {}
+        max_snooze_count:
+          name: Maximum snooze count
+          description: >
+            Stop re-sending after this many snoozes.
+            Set to 0 for unlimited snoozes (until timeout or action).
+            Only relevant when a button uses snooze mode.
+          default: 5
+          selector:
+            number:
+              min: 0
+              max: 50
+              step: 1
+              mode: slider
 mode: parallel
 max_exceeded: silent
-triggers:
-  - !input trigger_config
+triggers: !input trigger_config
 variables:
   button_1_label: !input button_1_label
   button_2_label: !input button_2_label
+  button_1_is_snooze: !input button_1_is_snooze
+  button_2_is_snooze: !input button_2_is_snooze
+  button_1_snooze_minutes: !input button_1_snooze_minutes
+  button_2_snooze_minutes: !input button_2_snooze_minutes
   has_button_1: "{{ button_1_label | default('', true) | length > 0 }}"
   has_button_2: "{{ button_2_label | default('', true) | length > 0 }}"
   action_tag: "{{ context.id }}"
@@ -122,6 +225,11 @@ variables:
   action_2: "{{ action_tag ~ '_BUTTON_2' }}"
   timeout_minutes: !input timeout_minutes
   notify_devices: !input notify_devices
+  notification_persistent: !input notification_persistent
+  notification_sticky: !input notification_sticky
+  clear_on_action: !input clear_on_action
+  max_snooze_count: !input max_snooze_count
+  has_timeout: "{{ timeout_minutes | int(0) > 0 }}"
   actions_list: >-
     {% set ns = namespace(actions=[]) %}
     {% if has_button_1 | bool %}
@@ -132,41 +240,108 @@ variables:
     {% endif %}
     {{ ns.actions }}
 actions:
-  - parallel:
-      - repeat:
-          for_each: "{{ notify_devices }}"
-          sequence:
-            - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | default('unknown', true) | slugify(separator='_') }}"
-              data:
-                title: !input notification_title
-                message: !input notification_message
+  - repeat:
+      while:
+        - condition: template
+          value_template: >-
+            {{ max_snooze_count | int(5) == 0
+               or repeat.index <= max_snooze_count | int(5) + 1 }}
+      sequence:
+        - repeat:
+            for_each: "{{ notify_devices }}"
+            sequence:
+              - action: >-
+                  notify.mobile_app_{{ device_attr(repeat.item, 'name')
+                    | default('unknown', true) | slugify(separator='_') }}
                 data:
-                  actions: "{{ actions_list }}"
-                  tag: "{{ action_tag }}"
-      - if:
-          - condition: template
-            value_template: "{{ has_button_1 | bool or has_button_2 | bool }}"
-        then:
-          - wait_for_trigger:
-              - trigger: event
-                event_type: mobile_app_notification_action
-                event_data:
-                  action: "{{ action_1 }}"
-                id: button_1
-              - trigger: event
-                event_type: mobile_app_notification_action
-                event_data:
-                  action: "{{ action_2 }}"
-                id: button_2
-            timeout:
-              minutes: "{{ timeout_minutes | int(0) }}"
-            continue_on_timeout: "{{ timeout_minutes | int(0) > 0 }}"
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_1' }}"
-                sequence: !input button_1_action
-              - conditions:
-                  - condition: template
-                    value_template: "{{ wait.trigger is not none and wait.trigger.id == 'button_2' }}"
-                sequence: !input button_2_action
+                  title: !input notification_title
+                  message: !input notification_message
+                  data:
+                    actions: "{{ actions_list }}"
+                    tag: "{{ action_tag }}"
+                    persistent: "{{ notification_persistent | bool(false) }}"
+                    sticky: "{{ notification_sticky | bool(false) }}"
+        - if:
+            - condition: template
+              value_template: "{{ not (has_button_1 | bool or has_button_2 | bool) }}"
+          then:
+            - stop: "Notification sent"
+        - wait_for_trigger:
+            - trigger: event
+              event_type: mobile_app_notification_action
+              event_data:
+                action: "{{ action_1 }}"
+              id: button_1
+            - trigger: event
+              event_type: mobile_app_notification_action
+              event_data:
+                action: "{{ action_2 }}"
+              id: button_2
+          timeout:
+            minutes: "{{ timeout_minutes | int(0) if has_timeout | bool(false) else 1440 }}"
+          continue_on_timeout: true
+        - choose:
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{ wait.trigger is not none
+                       and wait.trigger.id == 'button_1'
+                       and button_1_is_snooze | bool(false) }}
+              sequence:
+                - delay:
+                    minutes: "{{ button_1_snooze_minutes | int(15) }}"
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{ wait.trigger is not none
+                       and wait.trigger.id == 'button_2'
+                       and button_2_is_snooze | bool(false) }}
+              sequence:
+                - delay:
+                    minutes: "{{ button_2_snooze_minutes | int(15) }}"
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{ wait.trigger is not none
+                       and wait.trigger.id == 'button_1' }}
+              sequence:
+                - if:
+                    - condition: template
+                      value_template: "{{ clear_on_action | bool(true) }}"
+                  then:
+                    - repeat:
+                        for_each: "{{ notify_devices }}"
+                        sequence:
+                          - action: >-
+                              notify.mobile_app_{{ device_attr(repeat.item, 'name')
+                                | default('unknown', true) | slugify(separator='_') }}
+                            data:
+                              message: clear_notification
+                              data:
+                                tag: "{{ action_tag }}"
+                - sequence: !input button_1_action
+                - stop: "Button 1 action completed"
+            - conditions:
+                - condition: template
+                  value_template: >-
+                    {{ wait.trigger is not none
+                       and wait.trigger.id == 'button_2' }}
+              sequence:
+                - if:
+                    - condition: template
+                      value_template: "{{ clear_on_action | bool(true) }}"
+                  then:
+                    - repeat:
+                        for_each: "{{ notify_devices }}"
+                        sequence:
+                          - action: >-
+                              notify.mobile_app_{{ device_attr(repeat.item, 'name')
+                                | default('unknown', true) | slugify(separator='_') }}
+                            data:
+                              message: clear_notification
+                              data:
+                                tag: "{{ action_tag }}"
+                - sequence: !input button_2_action
+                - stop: "Button 2 action completed"
+          default:
+            - stop: "Notification timed out"
