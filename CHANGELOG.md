@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.1.3](https://github.com/st0o0/ha-blueprints/compare/v0.1.2...v0.1.3) (2026-10-09)
+
+
+### Features
+
+* add ADHD-friendly persistent reminder blueprint ([#8](https://github.com/st0o0/ha-blueprints/issues/8)) ([2045744](https://github.com/st0o0/ha-blueprints/commit/2045744c26d4a44384ef6902de91f5d6e5b4ab5a))
+* add mobile notification with actions blueprint ([#10](https://github.com/st0o0/ha-blueprints/issues/10)) ([a0113bd](https://github.com/st0o0/ha-blueprints/commit/a0113bdbd6ab32a9186c5a81a8cba85abc539a9b))
+* add robust Jinja2 templates and PR blueprint import links CI ([#6](https://github.com/st0o0/ha-blueprints/issues/6)) ([9db866b](https://github.com/st0o0/ha-blueprints/commit/9db866bd4b407d498bcad6319ece45f5f2909fa3))
+* Add weather blueprint support and trash reminder ([a44ea71](https://github.com/st0o0/ha-blueprints/commit/a44ea716cf1afa75dec8af62b349a8d3ee2d0c53))
+* **adhd-reminder:** add 4 configurable time window sections ([34c3912](https://github.com/st0o0/ha-blueprints/commit/34c39125eda6cc2c31d7dcbab2555d4a1b16b722))
+* **adhd-reminder:** add blueprint header, preset selector, notification inputs ([86b0a97](https://github.com/st0o0/ha-blueprints/commit/86b0a973f43737fd46e7f3a23f658231c3abaf99))
+* **adhd-reminder:** add snooze and escalation settings ([64b66f0](https://github.com/st0o0/ha-blueprints/commit/64b66f030d15059aaae790d35658ce0707cbf4ae))
+* **adhd-reminder:** add triggers, variables, and notification loop with escalation ([1c262ae](https://github.com/st0o0/ha-blueprints/commit/1c262ae958689c1238952728e79bb2d53778d4b9))
+* **blueprints:** add double press, color mode, and robustness ([48760fb](https://github.com/st0o0/ha-blueprints/commit/48760fb083d4b2a67bdc7d11455f5be30ef861b7))
+* **blueprints:** runtime color mode toggle and unified sections ([9d94199](https://github.com/st0o0/ha-blueprints/commit/9d941993eda85dbe60216b21566bebe4decf81f1))
+* **ci:** add Docker-based blueprint validator for input refs and Jinja2 syntax ([f11adc8](https://github.com/st0o0/ha-blueprints/commit/f11adc8e53c116a6703b6447124e59c6016759f8))
+* **E1743-light:** add color temp, night mode, hold invert, min brightness ([74e4734](https://github.com/st0o0/ha-blueprints/commit/74e473411bf8dd06af70f95e526ec6abb3309674))
+* **E2001-light:** Store color mode with controller event ([740e0c5](https://github.com/st0o0/ha-blueprints/commit/740e0c577a6a9864a53667b097b5a80323cf2895))
+* Enhance blueprint validation logic ([f91288e](https://github.com/st0o0/ha-blueprints/commit/f91288eb71bfe212dc94e9586f1c740e895162c9))
+* njord weather blueprints ([#11](https://github.com/st0o0/ha-blueprints/issues/11)) ([c569d9b](https://github.com/st0o0/ha-blueprints/commit/c569d9b34e4ef0ea36ae6c1c66d52d32283a5fd2))
+* **njord:** add four weather automation blueprints ([0fe1c43](https://github.com/st0o0/ha-blueprints/commit/0fe1c43b4d7d5cc758ffc3e2411cca79e114c008))
+* **njord:** add six remaining weather automation blueprints ([d5e3773](https://github.com/st0o0/ha-blueprints/commit/d5e37738d4c2756ccb0a7013f4099752c9b267b1))
+* **Notification:** add mobile notification with actions blueprint ([54f10c4](https://github.com/st0o0/ha-blueprints/commit/54f10c4e45fe36af4c7054336eb29590907c2763))
+* **notification:** Add snooze and persistent notification options ([b1e7843](https://github.com/st0o0/ha-blueprints/commit/b1e7843e3e1fadf2944417d4b7a74f5cd8f3e981))
+* **Notification:** make timeout optional, default to no timeout ([4b09acf](https://github.com/st0o0/ha-blueprints/commit/4b09acfd7ba4d9ddce8201be459dd9640dbc5775))
+
+
+### Bug Fixes
+
+* **blueprints:** delay-free double press and config restructure ([45bc7cf](https://github.com/st0o0/ha-blueprints/commit/45bc7cf30e9f04a3749298f8b4ce5158be3db598))
+* **ci:** extend blueprint validation to include njord_*.yaml files ([6788af6](https://github.com/st0o0/ha-blueprints/commit/6788af6cc988c3d77cd7e2abd1dd380e696424eb))
+* **ci:** only generate import links for changed blueprints in PR ([8842ff1](https://github.com/st0o0/ha-blueprints/commit/8842ff1ee184f55925d23e93b596bfb3489947ad))
+* **ci:** use full clone depth for PR changed-file diff ([d653184](https://github.com/st0o0/ha-blueprints/commit/d653184306d28859775bd60209db13c06618dea0))
+* correct helper_last_controller_event default type from [] to "" ([be3f41e](https://github.com/st0o0/ha-blueprints/commit/be3f41e9525b3d26483a915a61db224c28cf9af1))
+* critical template bugs in ADHD reminder and default type corrections ([1e122ed](https://github.com/st0o0/ha-blueprints/commit/1e122ed062acac837c2a0b62ba66a13cd8799cb1))
+* **E2001-light:** move light variable before color_mode to fix undefined error ([eeff106](https://github.com/st0o0/ha-blueprints/commit/eeff106a53fbbc5b8bb3b1ab092e5a1002ef381f))
+* improve template safety and correct default types across blueprints ([ba68a2b](https://github.com/st0o0/ha-blueprints/commit/ba68a2b8cdf10fdd6fa5cabd5296ed3cc9fbf0f7))
+* **njord:** translate notifications to English, remove excess trigger, add snooze CI ([f365822](https://github.com/st0o0/ha-blueprints/commit/f3658227c448be3448aa67b9ecf0ad9f0a9e8b20))
+* notification blueprint race condition, string-as-bool bugs, and default types ([93dcc5b](https://github.com/st0o0/ha-blueprints/commit/93dcc5b0a8567422a6c421624fe173493e3c34b4))
+* **notification:** use static boolean for continue_on_timeout with 24h fallback ([aba2290](https://github.com/st0o0/ha-blueprints/commit/aba2290810fb869c5f43e6251f59b440487216f0))
+* **notification:** use trigger input directly to avoid nested list ([06a5e87](https://github.com/st0o0/ha-blueprints/commit/06a5e8765401fc561b54ff63948899e0d34f8ff5))
+* **Notification:** wrap triggers input in list for schema validation ([2f9ab22](https://github.com/st0o0/ha-blueprints/commit/2f9ab22b19ef0a8564a1a5abf19d223ce1d918de))
+
+
+### Refactoring
+
+* **E2001-light:** move mode switch inputs to double press section ([42054ef](https://github.com/st0o0/ha-blueprints/commit/42054efb593d70b0bf4df707e851753e22d789f5))
+* **E2001-light:** read color mode from light state, remove helper ([d0d957c](https://github.com/st0o0/ha-blueprints/commit/d0d957cd8d3ebf42c236d077da0d5d9bf2555eb9))
+
+
+### Documentation
+
+* add Njord weather blueprints roadmap ([c5abc97](https://github.com/st0o0/ha-blueprints/commit/c5abc9733b122212fecbb2f58862ea8c8daf4269))
+
 ## [0.1.2](https://github.com/st0o0/ha-blueprints/compare/v0.1.1...v0.1.2) (2026-07-15)
 
 
