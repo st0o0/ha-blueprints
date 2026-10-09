@@ -1,0 +1,218 @@
+blueprint:
+  homeassistant:
+    min_version: 2024.10.0
+  author: st0o0
+  domain: automation
+  name: "🗑️ Trash / Waste Collection Calendar Reminder"
+  description: |
+    ## 🗑️ Trash / Waste Collection Calendar Reminder
+
+    Notify one or more mobile devices before a waste-collection (or any other)
+    calendar event, with **up to 2 independent reminder windows** — e.g. an
+    evening-before heads-up and a same-morning "put it out now" nudge.
+
+    ---
+
+    ### 🧠 Features
+    - 📅 **Any calendar entity** — waste collection, or anything else
+    - ⏰ **2 reminder windows** — each with its own "how many hours before"
+      and its own title/message
+    - 📱 **Multiple devices** — fans out to every selected phone
+    - 🔄 **Shared notification tag per calendar** — a later window's push
+      updates the same notification instead of stacking a new one
+
+    ---
+
+    ### 📆 Available calendar event fields
+
+    Every window's **Title** and **Message** fields support templates and
+    can use `trigger.calendar_event.*`, which Home Assistant populates from
+    the triggering calendar entry:
+
+    | Field | Meaning | Example |
+    |:------|:--------|:--------|
+    | `trigger.calendar_event.summary` | The event title | `Gelbe Tonne` |
+    | `trigger.calendar_event.start` | Start date/time (string) | `2026-10-13` |
+    | `trigger.calendar_event.end` | End date/time (string) | `2026-10-14` |
+    | `trigger.calendar_event.all_day` | Whether it's an all-day entry | `true` |
+    | `trigger.calendar_event.description` | Extra description, if the calendar provides one | often empty |
+    | `trigger.calendar_event.location` | Location, if the calendar provides one | often empty |
+
+    ⚠️ `description` and `location` depend entirely on what your calendar
+    source actually fills in — many waste-collection ICS feeds (and this
+    blueprint's own default messages) leave them empty, so don't rely on
+    them without checking your own calendar's events first
+    (**Developer Tools → Template**:
+    `{{ states.calendar.your_calendar.attributes }}`).
+
+    A typical message template:
+    ```
+    {{ trigger.calendar_event.summary | default('Abfuhr', true) }} ist morgen fällig.
+    ```
+
+    ---
+
+    ### ⚙️ Requirements
+    - 📲 Home Assistant Companion App on every target device
+    - 📅 A calendar entity (e.g. a waste-collection ICS feed)
+
+    ---
+
+    ✨ Created by **st0o0**
+
+  input:
+    calendar_entity:
+      name: "📅 Calendar"
+      description: >
+        The calendar entity to watch (e.g. your waste-collection calendar).
+        Home Assistant's calendar trigger only supports one entity at a
+        time — use a second automation instance from this blueprint if you
+        need to watch another calendar.
+      selector:
+        entity:
+          filter:
+            domain: calendar
+
+    notify_devices:
+      name: "📱 Mobile devices"
+      description: >
+        One or more mobile devices to send reminders to.
+        Devices must be registered via the Companion App.
+      selector:
+        device:
+          filter:
+            - integration: mobile_app
+          multiple: true
+
+    window_1_section:
+      name: "⏰ Window 1"
+      icon: mdi:clock-outline
+      collapsed: false
+      input:
+        window_1_enabled:
+          name: Enable window 1
+          description: Enable this reminder window.
+          default: true
+          selector:
+            boolean: {}
+        window_1_hours_before:
+          name: Hours before the event
+          description: >
+            How many hours before the event start to notify. Negative means
+            "before" — e.g. -13 notifies 13 hours before the event starts.
+          default: -13
+          selector:
+            number:
+              min: -168
+              max: 0
+              step: 0.5
+              unit_of_measurement: h
+              mode: slider
+        window_1_title:
+          name: Title
+          description: Notification title for this window. Supports templates.
+          default: "🗑️ Mülltonne raus!"
+          selector:
+            text: {}
+        window_1_message:
+          name: Message
+          description: >
+            Notification message for this window. Supports templates —
+            see the calendar event fields explained above.
+          default: >-
+            {{ trigger.calendar_event.summary | default('Abfuhr', true) }} ist morgen fällig.
+          selector:
+            text:
+              multiline: true
+
+    window_2_section:
+      name: "⏰ Window 2"
+      icon: mdi:clock-outline
+      collapsed: true
+      input:
+        window_2_enabled:
+          name: Enable window 2
+          description: Enable this reminder window.
+          default: false
+          selector:
+            boolean: {}
+        window_2_hours_before:
+          name: Hours before the event
+          description: >
+            How many hours before the event start to notify. Negative means
+            "before" — e.g. -2 notifies 2 hours before the event starts.
+          default: -2
+          selector:
+            number:
+              min: -168
+              max: 0
+              step: 0.5
+              unit_of_measurement: h
+              mode: slider
+        window_2_title:
+          name: Title
+          description: Notification title for this window. Supports templates.
+          default: "🗑️ Mülltonne raus!"
+          selector:
+            text: {}
+        window_2_message:
+          name: Message
+          description: >
+            Notification message for this window. Supports templates —
+            see the calendar event fields explained above.
+          default: >-
+            {{ trigger.calendar_event.summary | default('Abfuhr', true) }} ist heute fällig – jetzt raustellen!
+          selector:
+            text:
+              multiline: true
+
+mode: parallel
+max_exceeded: silent
+
+triggers:
+  - trigger: calendar
+    entity_id: !input calendar_entity
+    event: start
+    offset:
+      hours: !input window_1_hours_before
+    id: window_1
+  - trigger: calendar
+    entity_id: !input calendar_entity
+    event: start
+    offset:
+      hours: !input window_2_hours_before
+    id: window_2
+
+variables:
+  notify_devices: !input notify_devices
+  window_1_enabled: !input window_1_enabled
+  window_2_enabled: !input window_2_enabled
+  window_1_title: !input window_1_title
+  window_2_title: !input window_2_title
+  window_1_message: !input window_1_message
+  window_2_message: !input window_2_message
+  triggered_window: "{{ trigger.id | default('window_1') }}"
+  window_enabled: >-
+    {{ window_1_enabled if triggered_window == 'window_1' else window_2_enabled }}
+  resolved_title: >-
+    {{ window_1_title if triggered_window == 'window_1' else window_2_title }}
+  resolved_message: >-
+    {{ window_1_message if triggered_window == 'window_1' else window_2_message }}
+  notification_tag: "trash_reminder_{{ trigger.entity_id | slugify }}"
+
+condition:
+  - condition: template
+    value_template: "{{ window_enabled | bool(false) }}"
+
+actions:
+  - repeat:
+      for_each: "{{ notify_devices }}"
+      sequence:
+        - action: >-
+            notify.mobile_app_{{ device_attr(repeat.item, 'name')
+              | default('unknown', true) | slugify(separator='_') }}
+          data:
+            title: "{{ resolved_title }}"
+            message: "{{ resolved_message }}"
+            data:
+              tag: "{{ notification_tag }}"

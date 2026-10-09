@@ -53,13 +53,16 @@ blueprint:
             integration: njord
           multiple: true
 
-    notify_target:
-      name: 📱 Notify service
+    notify_devices:
+      name: 📱 Mobile devices
       description: >
-        The notification service/target to send alerts to
-        (e.g. `notify.mobile_app_your_phone`).
+        One or more mobile devices to send alerts to.
+        Devices must be registered via the Companion App.
       selector:
-        text: {}
+        device:
+          filter:
+            - integration: mobile_app
+          multiple: true
 
     severity_section:
       name: 🚦 Severity thresholds
@@ -202,7 +205,7 @@ triggers:
     id: alert_event
 
 variables:
-  notify_target: !input notify_target
+  notify_devices: !input notify_devices
   min_severity: !input min_severity
   critical_severity_for_notification: !input critical_severity_for_notification
   critical_severity_for_tts: !input critical_severity_for_tts
@@ -298,18 +301,23 @@ actions:
                       {% set ns.list = ns.list + [{'action': action_snooze, 'title': 'Snooze ' ~ snooze_hours ~ 'h'}] %}
                     {% endif %}
                     {{ ns.list }}
-              - action: "{{ notify_target }}"
-                data:
-                  title: "{{ notification_title }}"
-                  message: "{{ notification_message }}"
-                  data: >-
-                    {{ {
-                      'tag': alert_key,
-                      'actions': actions_list,
-                      'channel': ('njord_alert_critical' if is_critical_notification else 'njord_alert'),
-                      'importance': ('high' if is_critical_notification else 'default'),
-                      'priority': ('high' if is_critical_notification else 'default'),
-                    } }}
+              - repeat:
+                  for_each: "{{ notify_devices }}"
+                  sequence:
+                    - action: >-
+                        notify.mobile_app_{{ device_attr(repeat.item, 'name')
+                          | default('unknown', true) | slugify(separator='_') }}
+                      data:
+                        title: "{{ notification_title }}"
+                        message: "{{ notification_message }}"
+                        data: >-
+                          {{ {
+                            'tag': alert_key,
+                            'actions': actions_list,
+                            'channel': ('njord_alert_critical' if is_critical_notification else 'njord_alert'),
+                            'importance': ('high' if is_critical_notification else 'default'),
+                            'priority': ('high' if is_critical_notification else 'default'),
+                          } }}
               - if:
                   - condition: template
                     value_template: "{{ is_critical_tts }}"
@@ -377,14 +385,22 @@ actions:
               - condition: template
                 value_template: "{{ notify_on_deescalated }}"
             then:
-              - action: "{{ notify_target }}"
-                data:
-                  title: "↓ {{ alert_type | replace('_', ' ') | title }} weakened"
-                  message: >-
+              - variables:
+                  notification_title: "↓ {{ alert_type | replace('_', ' ') | title }} weakened"
+                  notification_message: >-
                     {{ previous_severity | title }} → {{ severity | title }}
                     {%- if duration_hours is not none %}, ~{{ duration_hours }}h duration{% endif %}
-                  data:
-                    tag: "{{ alert_key }}"
+              - repeat:
+                  for_each: "{{ notify_devices }}"
+                  sequence:
+                    - action: >-
+                        notify.mobile_app_{{ device_attr(repeat.item, 'name')
+                          | default('unknown', true) | slugify(separator='_') }}
+                      data:
+                        title: "{{ notification_title }}"
+                        message: "{{ notification_message }}"
+                        data:
+                          tag: "{{ alert_key }}"
 
       # cleared
       - conditions:
@@ -395,9 +411,14 @@ actions:
               - condition: template
                 value_template: "{{ notify_on_cleared }}"
             then:
-              - action: "{{ notify_target }}"
-                data:
-                  title: "✅ {{ alert_type | replace('_', ' ') | title }} cleared"
-                  message: "Was: {{ previous_severity | title }}"
-                  data:
-                    tag: "{{ alert_key }}"
+              - repeat:
+                  for_each: "{{ notify_devices }}"
+                  sequence:
+                    - action: >-
+                        notify.mobile_app_{{ device_attr(repeat.item, 'name')
+                          | default('unknown', true) | slugify(separator='_') }}
+                      data:
+                        title: "✅ {{ alert_type | replace('_', ' ') | title }} cleared"
+                        message: "Was: {{ previous_severity | title }}"
+                        data:
+                          tag: "{{ alert_key }}"
