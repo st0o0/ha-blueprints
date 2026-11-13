@@ -18,8 +18,10 @@ blueprint:
     - ⏰ **2 reminder windows** — each with its own "how many hours before"
       and its own title/message
     - 📱 **Multiple devices** — fans out to every selected phone
-    - 🔄 **Shared notification tag per calendar** — a later window's push
-      updates the same notification instead of stacking a new one
+    - 🔄 **One notification per event** — a later window's push updates the
+      same notification, while several collections on the same day each keep
+      their own
+    - 🙈 **Ignore list** — skip events like "Schadstoffmobil" that need no bin
 
     ---
 
@@ -82,6 +84,16 @@ blueprint:
         device:
           filter:
             - integration: mobile_app
+          multiple: true
+
+    ignore_summaries:
+      name: "🙈 Ignore events"
+      description: >
+        Events whose title contains one of these words (case-insensitive) send
+        no reminder, e.g. "Schadstoffmobil".
+      default: []
+      selector:
+        text:
           multiple: true
 
     window_1_section:
@@ -185,6 +197,7 @@ triggers:
 
 variables:
   notify_devices: !input notify_devices
+  ignore_summaries: !input ignore_summaries
   window_1_enabled: !input window_1_enabled
   window_2_enabled: !input window_2_enabled
   window_1_title: !input window_1_title
@@ -198,19 +211,31 @@ variables:
     {{ window_1_title if triggered_window == 'window_1' else window_2_title }}
   resolved_message: >-
     {{ window_1_message if triggered_window == 'window_1' else window_2_message }}
-  notification_tag: "trash_reminder_{{ trigger.entity_id | slugify }}"
+  # One tag per event: window 2 replaces window 1 of the same event, but
+  # several events on the same day no longer replace each other.
+  notification_tag: >-
+    trash_reminder_{{ trigger.entity_id | slugify }}_{{
+      (trigger.calendar_event.summary ~ '_' ~ trigger.calendar_event.start) | slugify }}
+  ignored: >-
+    {%- set summary = (trigger.calendar_event.summary | default('', true)) | lower -%}
+    {{ ignore_summaries | select('string') | map('lower') | map('trim')
+       | reject('eq', '') | select('in', summary) | list | count > 0 }}
 
 condition:
   - condition: template
     value_template: "{{ window_enabled | bool(false) }}"
+  - condition: template
+    value_template: "{{ not ignored | bool(false) }}"
 
 actions:
   - repeat:
       for_each: "{{ notify_devices }}"
       sequence:
+        # A failing device must not stop the others from being notified.
         - action: >-
             notify.mobile_app_{{ device_attr(repeat.item, 'name')
               | default('unknown', true) | slugify(separator='_') }}
+          continue_on_error: true
           data:
             title: "{{ resolved_title }}"
             message: "{{ resolved_message }}"
