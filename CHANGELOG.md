@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.4](https://github.com/st0o0/ha-blueprints/compare/v0.1.3...v0.1.4) (2026-11-23)
+
+
+### Bug Fixes
+
+* **njord:** build snooze action id without undefined context ([5c58c4f](https://github.com/st0o0/ha-blueprints/commit/5c58c4f822ad04725c91b75d45e9e1ab869d0da0))
+* **notification:** build action tag without undefined context ([49d1d89](https://github.com/st0o0/ha-blueprints/commit/49d1d8929be77f91e8572fce67ef0abbbd7b6240))
+* **trash:** keep one notification per event and add an ignore list ([accff35](https://github.com/st0o0/ha-blueprints/commit/accff3510223e5487672dea6fa72e2601be140e1))
+* **trash:** keep one notification per event and add an ignore list ([#13](https://github.com/st0o0/ha-blueprints/issues/13)) ([47b09a5](https://github.com/st0o0/ha-blueprints/commit/47b09a500cfb676ee8e47c080b15beb2aba1cf9c))
+
 ## [0.1.3](https://github.com/st0o0/ha-blueprints/compare/v0.1.2...v0.1.3) (2026-10-09)
 
 
