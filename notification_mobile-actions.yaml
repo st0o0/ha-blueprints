@@ -220,7 +220,7 @@ variables:
   button_2_snooze_minutes: !input button_2_snooze_minutes
   has_button_1: "{{ button_1_label | default('', true) | length > 0 }}"
   has_button_2: "{{ button_2_label | default('', true) | length > 0 }}"
-  action_tag: "{{ context.id }}"
+  action_tag: "{{ this.entity_id ~ '_' ~ (as_timestamp(now()) | int) }}"
   action_1: "{{ action_tag ~ '_BUTTON_1' }}"
   action_2: "{{ action_tag ~ '_BUTTON_2' }}"
   timeout_minutes: !input timeout_minutes
