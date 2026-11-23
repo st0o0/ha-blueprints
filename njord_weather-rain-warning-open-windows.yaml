@@ -174,7 +174,7 @@ variables:
     {{ enable_snooze and (snooze_pairs | selectattr('key', 'eq', rain_key) | selectattr('ts', 'gt', now_ts) | list | length > 0) }}
 
   action_details: "URI"
-  action_snooze: "{{ rain_key | upper }}_SNOOZE_{{ context.id }}"
+  action_snooze: "{{ rain_key | upper }}_SNOOZE_{{ as_timestamp(now()) | int }}"
 
 actions:
   - if:
